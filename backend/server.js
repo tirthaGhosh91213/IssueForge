@@ -19,12 +19,15 @@ const userRoutes = require('./routes/userAuth');
 const adminUserRoutes = require('./routes/adminUser');
 const adminUsersListRoutes = require('./routes/adminUsersList');
 const projectRoutes = require('./routes/projectRoutes');
+const issueRoutes = require('./routes/issueRoutes');
 
 app.use('/api/admin', adminRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/admin', adminUserRoutes);
 app.use('/api/admin', adminUsersListRoutes);
 app.use('/api/admin', projectRoutes);
+app.use('/uploads', express.static('uploads'));
+app.use('/api/issues', issueRoutes);
 app.use('/uploads', express.static('uploads'));
 
 
