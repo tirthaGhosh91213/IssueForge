@@ -1,10 +1,11 @@
 const express = require('express');
 const mongoose = require('mongoose');
+const cors = require("cors");
 
 const app = express();
 app.use(express.json());
 require('dotenv').config();
-
+app.use(cors());  
 
 
 /* MongoDB connect */
@@ -32,6 +33,7 @@ app.use('/api/issues', issueRoutes);
 app.use('/uploads', express.static('uploads'));
 
 
+app.use(express.json());
 
 app.listen(5000, ()=>{
   console.log('🚀 Server running at http://localhost:5000');

@@ -77,4 +77,18 @@ ULMiND Team
   }
 
 });
+/* =================================================
+   DELETE USER
+   DELETE /api/admin/user/:id
+================================================= */
+router.delete('/user/:id', async (req, res) => {
+
+  await User.findByIdAndDelete(req.params.id);
+
+  res.json({
+    success:true,
+    message:'User deleted ✅'
+  });
+});
+
 module.exports = router;
