@@ -8,9 +8,9 @@ const Project = require('../models/Project');
 const sendEmail = require('../utils/sendEmail');
 
 
-/* =============================
+/* =================================
    Multer config
-============================= */
+================================= */
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, 'uploads/'),
   filename: (req, file, cb) =>
@@ -20,61 +20,73 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 
-
-  //  CREATE ISSUE (image/video supported)
-
+/* =================================
+   CREATE ISSUE
+================================= */
 router.post('/create/:projectId', upload.single('media'), async (req, res) => {
 
-  const { title, description, priority } = req.body;
+  try {
 
-  const issue = await Issue.create({
-    title,
-    description,
-    priority,
-    project: req.params.projectId,
-    media: req.file ? req.file.filename : null
-  });
+    const { title, description, priority } = req.body;
 
-  res.json({ success:true, issue });
+    const issue = await Issue.create({
+      title,
+      description,
+      priority,
+      project: req.params.projectId,
+      media: req.file ? req.file.filename : null
+    });
+
+    res.json({ success:true, issue });
+
+  } catch (err) {
+    res.json({ success:false, message: err.message });
+  }
 });
 
 
-
-  //  GET ISSUES (pagination + filter + search)
-
+/* =================================
+   GET ISSUES
+================================= */
 router.get('/', async (req, res) => {
 
-  const { page = 1, limit = 5, status, priority, search, projectId } = req.query;
+  try {
 
-  const filter = {};
+    const { page=1, limit=5, status, priority, search, projectId } = req.query;
 
-  if (projectId) filter.project = projectId;
-  if (status) filter.status = status;
-  if (priority) filter.priority = priority;
-  if (search) filter.title = { $regex: search, $options: 'i' };
+    const filter = {};
 
-  const skip = (page - 1) * limit;
+    if (projectId) filter.project = projectId;
+    if (status) filter.status = status;
+    if (priority) filter.priority = priority;
+    if (search) filter.title = { $regex: search, $options: 'i' };
 
-  const total = await Issue.countDocuments(filter);
+    const skip = (page - 1) * limit;
 
-  const issues = await Issue.find(filter)
-    .populate('assignedTo', 'name email')
-    .skip(skip)
-    .limit(parseInt(limit));
+    const total = await Issue.countDocuments(filter);
 
-  res.json({
-    success:true,
-    total,
-    page:Number(page),
-    pages:Math.ceil(total/limit),
-    issues
-  });
+    const issues = await Issue.find(filter)
+      .populate('assignedTo', 'name email')
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    res.json({
+      success:true,
+      total,
+      page:Number(page),
+      pages:Math.ceil(total/limit),
+      issues
+    });
+
+  } catch (err) {
+    res.json({ success:false, message: err.message });
+  }
 });
 
 
-
-  //  GET ISSUE BY ID
-
+/* =================================
+   GET ISSUE BY ID
+================================= */
 router.get('/:id', async (req, res) => {
 
   const issue = await Issue.findById(req.params.id)
@@ -85,40 +97,55 @@ router.get('/:id', async (req, res) => {
 });
 
 
-
-  //  ASSIGN USER + SEND EMAIL
-
+/* =================================
+   ASSIGN USER + EMAIL (FIXED)
+================================= */
 router.put('/assign/:id', async (req, res) => {
 
-  const { userId, adminName } = req.body;
+  try {
 
-  const issue = await Issue.findById(req.params.id).populate('project');
-  const user = await User.findById(userId);
+    const { userId, adminName } = req.body;
 
-  issue.assignedTo = userId;
-  await issue.save();
+    const issue = await Issue.findById(req.params.id).populate('project');
+    const user = await User.findById(userId);
 
-  const message = `
+    if (!issue || !user)
+      return res.json({ success:false, message:'Issue/User not found ❌' });
+
+    issue.assignedTo = userId;
+    await issue.save();
+
+
+    const message = `
 Hello ${user.name},
 
-You are assigned a new issue.
+You have been assigned a new issue.
 
 Project: ${issue.project.name}
 Title: ${issue.title}
 Description: ${issue.description}
+Priority: ${issue.priority}
 Assigned by: ${adminName}
 
-Thanks.
+Please login and fix it.
+
+Thanks,
+IssueForge Team
 `;
 
-  await sendEmail(user.email, 'New Issue Assigned 🚀', message);
+    await sendEmail(user.email, '🚀 New Issue Assigned', message);
 
-  res.json({ success:true, message:'Assigned + Email sent ✅' });
+    res.json({ success:true, message:'Assigned + Email sent ✅' });
+
+  } catch (err) {
+    res.json({ success:false, message: err.message });
+  }
 });
 
 
-  //  UPDATE STATUS
-
+/* =================================
+   UPDATE STATUS
+================================= */
 router.put('/status/:id', async (req, res) => {
 
   const issue = await Issue.findByIdAndUpdate(
@@ -131,9 +158,9 @@ router.put('/status/:id', async (req, res) => {
 });
 
 
-
-  //  ADD COMMENT
-
+/* =================================
+   ADD COMMENT
+================================= */
 router.post('/comment/:id', async (req, res) => {
 
   const issue = await Issue.findByIdAndUpdate(
@@ -146,9 +173,9 @@ router.post('/comment/:id', async (req, res) => {
 });
 
 
-
-  //  DASHBOARD STATS
-
+/* =================================
+   DASHBOARD STATS
+================================= */
 router.get('/stats/:projectId', async (req, res) => {
 
   const id = req.params.projectId;
@@ -164,9 +191,9 @@ router.get('/stats/:projectId', async (req, res) => {
 });
 
 
-
-  //  DELETE ISSUE (ADMIN ONLY)
-
+/* =================================
+   DELETE ISSUE (ADMIN ONLY)
+================================= */
 router.delete('/:id', async (req, res) => {
 
   if (req.body.role !== 'admin')
