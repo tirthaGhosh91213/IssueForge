@@ -1,39 +1,51 @@
 const nodemailer = require('nodemailer');
 
-/* =================================
-   TRANSPORTER
-================================= */
 const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
   port: 587,
-  secure: false, // true for 465, false for other ports
+  secure: false,
   auth: {
-    user: 'ghoshtirtha1234@gmail.com',
-    pass: 'msxq kgeu rjpz etmu',
-  },
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS
+  }
 });
 
 
-/* =================================
-   SEND EMAIL FUNCTION
-================================= */
 const sendEmail = async (to, subject, message) => {
 
   try {
 
     await transporter.sendMail({
-      from: `IssueForge <${process.env.EMAIL_USER}>`,
+      from: `ULMiND <${process.env.EMAIL_USER}>`,
       to,
       subject,
-
-      // plain text
       text: message,
 
-      // HTML version (professional look)
       html: `
-        <div style="font-family:Arial;padding:15px">
-          <h2>🚀 Issue Assigned</h2>
-          <pre style="font-size:14px">${message}</pre>
+        <div style="
+          font-family:Arial;
+          background:#f4f6f8;
+          padding:25px;
+        ">
+          <div style="
+            max-width:600px;
+            margin:auto;
+            background:white;
+            padding:25px;
+            border-radius:10px;
+            box-shadow:0 4px 10px rgba(0,0,0,0.1);
+          ">
+            <h2 style="color:#4CAF50;">🎉 Welcome to ULMiND</h2>
+            <p style="white-space:pre-line;font-size:14px;">
+              ${message}
+            </p>
+
+            <hr/>
+
+            <p style="font-size:12px;color:gray;">
+              This is an automated email. Please do not reply.
+            </p>
+          </div>
         </div>
       `
     });

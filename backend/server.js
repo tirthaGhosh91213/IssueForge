@@ -14,8 +14,6 @@ mongoose.connect('mongodb+srv://tirtha:tirtha2004@cluster1.6jhriyo.mongodb.net/I
 
 
 const adminCreateRoutes = require('./routes/admin');
-app.use('/api/admin', adminCreateRoutes);
-
 const adminRoutes = require('./routes/adminAuth');
 const userRoutes = require('./routes/userAuth');
 const adminUserRoutes = require('./routes/adminUser');
@@ -23,8 +21,9 @@ const adminUsersListRoutes = require('./routes/adminUsersList');
 const projectRoutes = require('./routes/projectRoutes');
 const issueRoutes = require('./routes/issueRoutes');
 
+app.use('/api/admin', adminCreateRoutes);
 app.use('/api/admin', adminRoutes);
-app.use('/api/user', userRoutes);
+app.use('/api/user', userRoutes)
 app.use('/api/admin', adminUserRoutes);
 app.use('/api/admin', adminUsersListRoutes);
 app.use('/api/admin', projectRoutes);
