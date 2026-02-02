@@ -17,10 +17,15 @@ app.use('/api/admin', adminCreateRoutes);
 const adminRoutes = require('./routes/adminAuth');
 const userRoutes = require('./routes/userAuth');
 const adminUserRoutes = require('./routes/adminUser');
+const adminUsersListRoutes = require('./routes/adminUsersList');
+const projectRoutes = require('./routes/projectRoutes');
 
 app.use('/api/admin', adminRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/admin', adminUserRoutes);
+app.use('/api/admin', adminUsersListRoutes);
+app.use('/api/admin', projectRoutes);
+app.use('/uploads', express.static('uploads'));
 
 
 
