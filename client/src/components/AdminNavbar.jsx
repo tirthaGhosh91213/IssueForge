@@ -1,84 +1,94 @@
 import { motion } from "framer-motion";
-import { Users, FolderKanban, Bug, Plus, Shield, LogOut, UserPlus } from "lucide-react";
+import { Menu, Plus, Shield, LogOut } from "lucide-react";
 
-export default function AdminNavbar({ active, setActive, navigate }) {
-  const tabs = [
-    { key: "users", label: "Users", icon: Users },
-    { key: "projects", label: "Projects", icon: FolderKanban },
-    { key: "issues", label: "Issues", icon: Bug }
+export default function AdminNavbar({ onMenuClick, navigate }) {
+  const actions = [
+    { icon: Plus, label: "Project", path: "/admin/create-project" },
+    { icon: Plus, label: "User", path: "/admin/create-user" },
+    { icon: Shield, label: "Admin", path: "/admin/users" }
   ];
 
   return (
-    <motion.nav
-      initial={{ y: -100 }}
-      animate={{ y: 0 }}
-      transition={{ duration: 0.6, type: "spring" }}
-      className="bg-white shadow-lg border-b border-gray-200 px-8 py-6 sticky top-0 z-50"
-    >
-      <div className="max-w-7xl mx-auto flex items-center justify-between">
-        {/* Logo */}
-        <motion.div 
-          className="flex items-center gap-3"
-          whileHover={{ scale: 1.02 }}
-        >
-          <div className="w-12 h-12 bg-indigo-600 rounded-xl flex items-center justify-center shadow-md">
-            <span className="text-2xl font-bold text-white">IF</span>
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">IssueForge</h1>
-            <p className="text-xs text-gray-500 font-medium">Admin Panel</p>
-          </div>
-        </motion.div>
-
-        {/* Tabs */}
-        <div className="flex items-center gap-1 bg-gray-50 rounded-xl p-1">
-          {tabs.map((tab) => {
-            const Icon = tab.icon;
-            return (
-              <motion.button
-                key={tab.key}
-                layout
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => setActive(tab.key)}
-                className={`flex items-center gap-2 px-6 py-3 rounded-lg font-medium text-sm transition-all duration-200 ${
-                  active === tab.key
-                    ? "bg-indigo-600 text-white shadow-md"
-                    : "text-gray-700 hover:bg-white hover:text-gray-900 hover:shadow-sm"
-                }`}
-              >
-                <Icon size={18} />
-                <span>{tab.label}</span>
-              </motion.button>
-            );
-          })}
-        </div>
-
-        {/* Actions - Clean and Minimal */}
-        <div className="flex items-center gap-2">
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => navigate("/admin/create-project")}
-            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 shadow-sm transition-all duration-200"
+    <nav className="bg-white/95 backdrop-blur-xl shadow-xl border-b border-slate-200/50 sticky top-0 z-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-5 lg:py-6">
+        <div className="flex items-center justify-between">
+          {/* Logo - Mobile First */}
+          <motion.div 
+            whileHover={{ scale: 1.02 }}
+            className="flex items-center gap-3 flex-shrink-0"
           >
-            <Plus size={16} />
-            New
-          </motion.button>
-          
+            <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl flex items-center justify-center shadow-lg">
+              <span className="text-xl sm:text-2xl font-bold text-white">U</span>
+            </div>
+            <div className="hidden sm:block">
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
+                ULMiND IssueForge
+              </h1>
+              <p className="text-xs sm:text-sm text-slate-500 font-medium hidden lg:block">Admin Dashboard</p>
+            </div>
+            <span className="sm:hidden text-xl font-bold text-slate-900">IssueForge</span>
+          </motion.div>
+
+          {/* Mobile Menu Button */}
           <motion.button
             whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => {
+            whileTap={{ scale: 0.95 }}
+            onClick={onMenuClick}
+            className="lg:hidden p-2 text-slate-700 hover:bg-slate-100 rounded-xl hover:shadow-md transition-all"
+          >
+            <Menu size={24} />
+          </motion.button>
+
+          {/* Desktop Actions */}
+          <div className="hidden md:flex items-center gap-2 lg:gap-3">
+            {actions.map((action, idx) => (
+              <ActionButton 
+                key={action.label}
+                delay={idx * 0.05}
+                icon={action.icon}
+                label={action.label}
+                onClick={() => navigate(action.path)}
+              />
+            ))}
+            
+            <LogoutButton onClick={() => {
               localStorage.removeItem("auth");
               navigate("/login");
-            }}
-            className="p-2 text-gray-500 hover:text-red-500 hover:bg-gray-100 rounded-lg transition-all duration-200"
-          >
-            <LogOut size={18} />
-          </motion.button>
+            }} />
+          </div>
         </div>
       </div>
-    </motion.nav>
+    </nav>
+  );
+}
+
+function ActionButton({ icon: Icon, label, onClick, delay = 0 }) {
+  return (
+    <motion.button
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay }}
+      whileHover={{ scale: 1.05, y: -2 }}
+      whileTap={{ scale: 0.98 }}
+      onClick={onClick}
+      className="flex items-center gap-2 bg-blue-600 text-white px-4 sm:px-5 py-2.5 sm:py-3 rounded-xl shadow-lg hover:shadow-xl hover:bg-blue-700 transition-all duration-300 font-medium text-sm sm:text-base whitespace-nowrap"
+    >
+      <Icon size={18} />
+      <span className="hidden sm:inline">{label}</span>
+    </motion.button>
+  );
+}
+
+function LogoutButton({ onClick }) {
+  return (
+    <motion.button
+      whileHover={{ scale: 1.05 }}
+      whileTap={{ scale: 0.95 }}
+      onClick={onClick}
+      className="ml-2 p-2.5 sm:p-3 text-slate-700 hover:bg-slate-100 hover:text-red-600 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
+      title="Logout"
+    >
+      <LogOut size={20} />
+    </motion.button>
   );
 }
