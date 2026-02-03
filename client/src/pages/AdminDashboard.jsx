@@ -1,3 +1,4 @@
+// AdminDashboard.jsx - SIMPLE FORMAL SIDEBAR
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -5,292 +6,141 @@ import AdminNavbar from "../components/AdminNavbar";
 import { 
   Users, 
   Folder, 
-  Bug,
-  User,
-  Image,
-  AlertCircle,
-  Loader2
+  ChevronLeft, 
+  ChevronRight,
+  Loader2 
 } from "lucide-react";
+import AllUsers from "../components/AllUsers";
+import AllProjects from "../components/AllProjects";
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
-  const [active, setActive] = useState("users");
-  
-  const [users, setUsers] = useState([]);
-  const [projects, setProjects] = useState([]);
-  const [issues, setIssues] = useState([]);
+  const [activeTab, setActiveTab] = useState("users");
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        const [usersRes, projectsRes, issuesRes] = await Promise.all([
-          fetch("http://localhost:5000/api/admin/users"),
-          fetch("http://localhost:5000/api/admin/projects"),
-          fetch("http://localhost:5000/api/issues?page=1&limit=5")
-        ]);
-        
-        const usersData = await usersRes.json();
-        const projectsData = await projectsRes.json();
-        const issuesData = await issuesRes.json();
-        
-        setUsers(usersData.users || []);
-        setProjects(projectsData.projects || []);
-        setIssues(issuesData.issues || []);
-      } catch (error) {
-        console.error("Fetch error:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
+    const timer = setTimeout(() => setLoading(false), 800);
+    return () => clearTimeout(timer);
   }, []);
 
-  const stats = [
-    { label: "Total Users", value: users.length, color: "blue", Icon: Users },
-    { label: "Total Projects", value: projects.length, color: "violet", Icon: Folder },
-    { label: "Open Issues", value: issues.filter(i => i.status === "open").length, color: "indigo", Icon: AlertCircle }
-  ];
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50">
+    <div className="h-screen w-screen overflow-hidden bg-white">
       <AdminNavbar navigate={navigate} />
       
-      <div className="max-w-7xl mx-auto p-8">
-        {/* Stats Header */}
-        {/* <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12"
-        >
-          {stats.map((stat, idx) => (
-            <StatCard key={stat.label} delay={idx * 0.1} {...stat} />
-          ))}
-        </motion.div> */}
+      <div className="h-[calc(100vh-80px)] flex">
+        {/* Simple Formal White Sidebar */}
+        <div className={`flex-shrink-0 transition-all duration-500 shadow-lg border-r border-gray-200 ${
+          window.innerWidth >= 1024 ? 'w-64' : isSidebarOpen ? 'w-64' : 'w-0 overflow-hidden'
+        }`}>
+          <div className="h-full flex flex-col bg-white">
+            {/* Clean Header */}
+            <div className="p-8 border-b border-gray-200">
+              <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+                {/* <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
+                  <Users className="w-6 h-6 text-blue-600" />
+                </div> */}
+                Admin Panel
+              </h1>
+            </div>
 
-        {/* Main Content */}
-        <div className="flex gap-8">
-          {/* Sidebar Tabs */}
-          <motion.div 
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="w-64 flex-shrink-0 hidden lg:block"
-          >
-            <TabSidebar active={active} setActive={setActive} />
-          </motion.div>
+            {/* Navigation - Simple & Formal */}
+            <nav className="flex-1 p-4 space-y-2">
+              {/* Users */}
+              <motion.button
+                onClick={() => {
+                  setActiveTab("users");
+                  if (window.innerWidth < 1024) setIsSidebarOpen(false);
+                }}
+                className={`w-full flex items-center gap-4 p-4 rounded-xl transition-all duration-200 group ${
+                  activeTab === "users"
+                    ? "bg-blue-50 border-2 border-blue-200 text-blue-800 shadow-sm font-semibold"
+                    : "text-gray-700 hover:bg-gray-50 hover:text-gray-900 border border-gray-200"
+                }`}
+                whileHover={{ x: 4 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <div className={`w-11 h-11 rounded-lg flex items-center justify-center transition-all ${
+                  activeTab === "users" ? "bg-blue-200" : "bg-gray-100 group-hover:bg-blue-50"
+                }`}>
+                  <Users className={`w-5 h-5 ${activeTab === "users" ? "text-blue-700" : "text-gray-500 group-hover:text-blue-600"}`} />
+                </div>
+                <span className="text-left font-medium">All Users</span>
+              </motion.button>
 
-          {/* Content Area */}
-          <div className="flex-1 min-w-0">
-            <AnimatePresence mode="wait">
-              {loading ? (
-                <LoadingState key="loading" />
-              ) : (
-                <>
-                  {active === "users" && (
-                    <ContentSection key="users" title="All Users">
-                      {users.map(user => (
-                        <UserCard key={user._id} user={user} />
-                      ))}
-                    </ContentSection>
-                  )}
-                  {active === "projects" && (
-                    <ContentSection key="projects" title="All Projects">
-                      {projects.map(project => (
-                        <ProjectCard key={project._id} project={project} />
-                      ))}
-                    </ContentSection>
-                  )}
-                  {active === "issues" && (
-                    <ContentSection key="issues" title="All Issues">
-                      {issues.map(issue => (
-                        <IssueCard key={issue._id} issue={issue} />
-                      ))}
-                    </ContentSection>
-                  )}
-                </>
-              )}
-            </AnimatePresence>
+              {/* Projects */}
+              <motion.button
+                onClick={() => {
+                  setActiveTab("projects");
+                  if (window.innerWidth < 1024) setIsSidebarOpen(false);
+                }}
+                className={`w-full flex items-center gap-4 p-4 rounded-xl transition-all duration-200 group ${
+                  activeTab === "projects"
+                    ? "bg-blue-50 border-2 border-blue-200 text-blue-800 shadow-sm font-semibold"
+                    : "text-gray-700 hover:bg-gray-50 hover:text-gray-900 border border-gray-200"
+                }`}
+                whileHover={{ x: 4 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <div className={`w-11 h-11 rounded-lg flex items-center justify-center transition-all ${
+                  activeTab === "projects" ? "bg-blue-200" : "bg-gray-100 group-hover:bg-blue-50"
+                }`}>
+                  <Folder className={`w-5 h-5 ${activeTab === "projects" ? "text-blue-700" : "text-gray-500 group-hover:text-blue-600"}`} />
+                </div>
+                <span className="text-left font-medium">All Projects</span>
+              </motion.button>
+            </nav>
+
+            {/* Mobile Toggle */}
+            <div className="p-4 border-t border-gray-200 lg:hidden">
+              <motion.button
+                className="w-full p-3 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-xl transition-all text-sm font-medium text-gray-700 flex items-center justify-center gap-2"
+                onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                {isSidebarOpen ? <ChevronLeft className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
+                <span>{isSidebarOpen ? "Close" : "Open Menu"}</span>
+              </motion.button>
+            </div>
           </div>
         </div>
-      </div>
-    </div>
-  );
-}
 
-// Stats Card
-// function StatCard({ label, value, color, Icon, delay = 0 }) {
-//   return (
-//     <motion.div
-//       initial={{ opacity: 0, y: 20 }}
-//       animate={{ opacity: 1, y: 0 }}
-//       transition={{ delay }}
-//       whileHover={{ y: -4 }}
-//       className="bg-white/80 backdrop-blur-xl rounded-2xl p-8 shadow-lg border border-white/50 hover:border-transparent hover:shadow-2xl transition-all duration-300 group"
-//     >
-//       <div className={`w-12 h-12 rounded-xl bg-gradient-to-r from-${color}-500 to-${color}-600 flex items-center justify-center mb-4 shadow-lg group-hover:scale-110 transition-transform`}>
-//         <Icon className="w-6 h-6 text-white" />
-//       </div>
-//       <p className="text-3xl font-bold text-slate-800 mb-1">{value}</p>
-//       <p className="text-sm font-medium text-slate-600">{label}</p>
-//     </motion.div>
-//   );
-// }
-
-// Sidebar Tabs
-function TabSidebar({ active, setActive }) {
-  const tabs = [
-    { key: "users", label: "Users", Icon: Users },
-    { key: "projects", label: "Projects", Icon: Folder },
-    { key: "issues", label: "Issues", Icon: Bug }
-  ];
-
-  return (
-    <div className="bg-white/70 backdrop-blur-xl rounded-2xl p-6 shadow-xl border border-white/50 sticky top-8 h-fit">
-      <h3 className="font-semibold text-slate-800 mb-6 text-lg">Quick Access</h3>
-      <nav className="space-y-2">
-        {tabs.map(tab => (
-          <TabButton 
-            key={tab.key}
-            active={active === tab.key}
-            onClick={() => setActive(tab.key)}
-            Icon={tab.Icon}
-            label={tab.label}
-          />
-        ))}
-      </nav>
-    </div>
-  );
-}
-
-function TabButton({ active, onClick, label, Icon }) {
-  return (
-    <motion.button
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
-      onClick={onClick}
-      className={`w-full flex items-center gap-3 p-4 rounded-xl transition-all duration-200 text-left group ${
-        active 
-          ? "bg-gradient-to-r from-blue-500 to-violet-600 text-white shadow-lg" 
-          : "text-slate-700 hover:bg-slate-100 hover:text-blue-600"
-      }`}
-    >
-      <Icon className={`w-5 h-5 ${active ? 'text-white' : 'text-slate-500 group-hover:text-blue-500'}`} />
-      <span className="font-medium">{label}</span>
-    </motion.button>
-  );
-}
-
-// Content Section
-function ContentSection({ title, children }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, x: 40 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -40 }}
-      className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/50 p-8"
-    >
-      <h2 className="text-3xl font-bold text-slate-800 mb-2 flex items-center gap-3">
-        <span className="w-12 h-12 bg-gradient-to-r from-blue-500 to-violet-600 rounded-2xl flex items-center justify-center">
-          <Users className="w-6 h-6 text-white" />
-        </span>
-        {title}
-      </h2>
-      <p className="text-slate-600 mb-8">Manage and monitor your {title.toLowerCase()}</p>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {children}
-      </div>
-    </motion.div>
-  );
-}
-
-// Cards
-function UserCard({ user }) {
-  return (
-    <motion.div
-      whileHover={{ y: -8, scale: 1.02 }}
-      className="group bg-gradient-to-br from-white to-slate-50 rounded-2xl p-6 shadow-lg border border-slate-100 hover:shadow-xl hover:border-transparent transition-all duration-300 overflow-hidden"
-    >
-      <div className="flex items-start gap-4 mb-4">
-        <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-violet-600 rounded-2xl flex items-center justify-center text-white font-bold text-lg">
-          {user.name?.charAt(0)?.toUpperCase()}
-        </div>
-        <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-slate-800 group-hover:text-blue-600 transition-colors">{user.name}</h3>
-          <p className="text-sm text-slate-500 truncate">{user.email}</p>
+        {/* Main Content */}
+        <div className="flex-1 overflow-hidden bg-white">
+          <AnimatePresence mode="wait">
+            {loading ? (
+              <motion.div
+                key="loading"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="h-full flex flex-col items-center justify-center p-12"
+              >
+                <motion.div 
+                  className="w-20 h-20 border-4 border-gray-200 border-t-blue-500 rounded-xl mb-8 shadow-lg"
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                />
+                <h2 className="text-3xl font-bold text-gray-900 mb-2">Loading Dashboard</h2>
+                <p className="text-lg text-gray-600">Please wait while we prepare your data</p>
+              </motion.div>
+            ) : (
+              <motion.div
+                key="main"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.4, type: "spring" }}
+                className="h-full overflow-y-auto p-8"
+              >
+                {activeTab === "users" && <AllUsers />}
+                {activeTab === "projects" && <AllProjects />}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
-      <div className="flex items-center justify-between">
-        <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-          user.role === 'admin' ? 'bg-blue-100 text-blue-800' :
-          user.role === 'user' ? 'bg-violet-100 text-violet-800' : 'bg-slate-100 text-slate-800'
-        }`}>
-          {user.role}
-        </span>
-        <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse" />
-      </div>
-    </motion.div>
-  );
-}
-
-function ProjectCard({ project }) {
-  return (
-    <motion.div
-      whileHover={{ y: -8, scale: 1.02 }}
-      className="group bg-gradient-to-br from-white to-slate-50 rounded-2xl p-6 shadow-lg border border-slate-100 hover:shadow-xl hover:border-transparent transition-all duration-300 overflow-hidden"
-    >
-      <div className="w-full h-32 bg-gradient-to-br from-slate-200 to-slate-300 rounded-xl mb-4 group-hover:scale-105 transition-transform overflow-hidden relative">
-        <Image className="w-full h-full object-cover group-hover:brightness-110 transition-all absolute inset-0 opacity-20" />
-        {project.image && (
-          <img
-            src={`http://localhost:5000/uploads/${project.image}`}
-            alt={project.name}
-            className="w-full h-full object-cover group-hover:brightness-110 transition-all"
-          />
-        )}
-      </div>
-      <h3 className="font-semibold text-slate-800 mb-2 line-clamp-2 group-hover:text-blue-600">{project.name}</h3>
-      <p className="text-sm text-slate-500 mb-4">{project.description || "No description"}</p>
-    </motion.div>
-  );
-}
-
-function IssueCard({ issue }) {
-  return (
-    <motion.div
-      whileHover={{ y: -8, scale: 1.02 }}
-      className="group bg-gradient-to-br from-white to-slate-50 rounded-2xl p-6 shadow-lg border border-slate-100 hover:shadow-xl hover:border-transparent transition-all duration-300"
-    >
-      <h3 className="font-semibold text-slate-800 mb-3 line-clamp-2 group-hover:text-blue-600">{issue.title}</h3>
-      <div className="flex items-center justify-between">
-        <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-          issue.status === 'open' ? 'bg-red-100 text-red-800' :
-          issue.status === 'in-progress' ? 'bg-yellow-100 text-yellow-800' :
-          'bg-green-100 text-green-800'
-        }`}>
-          {issue.status}
-        </span>
-        <div className={`w-3 h-3 rounded-full ${
-          issue.priority === 'high' ? 'bg-red-500' :
-          issue.priority === 'medium' ? 'bg-yellow-500' : 'bg-green-500'
-        }`} />
-      </div>
-    </motion.div>
-  );
-}
-
-function LoadingState() {
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="flex flex-col items-center justify-center py-20 bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/50"
-    >
-      <Loader2 className="w-16 h-16 text-blue-500 animate-spin mb-6" />
-      <h2 className="text-2xl font-semibold text-slate-800 mb-2">Loading Dashboard...</h2>
-      <p className="text-slate-600">Fetching your data</p>
-    </motion.div>
+    </div>
   );
 }
