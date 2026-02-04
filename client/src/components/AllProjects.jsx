@@ -95,7 +95,7 @@ export default function AllProjects() {
                     </div>
                   </div>
                   <div className="absolute inset-0 flex items-center justify-center opacity-100 group-hover:opacity-0 transition-opacity duration-300">
-                    <ImageIcon className="w-24 h-24 text-slate-400" />
+                    
                   </div>
                 </div>
               </div>
@@ -109,7 +109,7 @@ export default function AllProjects() {
                 <span className="px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 text-white text-sm font-semibold rounded-xl shadow-lg">
                   Active
                 </span>
-                <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300">
+                <div className="flex gap-2  transition-all duration-300">
                   <button className="p-3 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-2xl hover:scale-110 transition-all shadow-md hover:shadow-lg">
                     Edit
                   </button>

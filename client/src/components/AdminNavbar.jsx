@@ -3,9 +3,9 @@ import { Menu, Plus, Shield, LogOut } from "lucide-react";
 
 export default function AdminNavbar({ onMenuClick, navigate }) {
   const actions = [
-    { icon: Plus, label: "Project", path: "/admin/create-project" },
-    { icon: Plus, label: "User", path: "/admin/create-user" },
-    { icon: Shield, label: "Admin", path: "/admin/users" }
+    { icon: Plus, label: "New Project", path: "/admin/create-project" },
+    { icon: Plus, label: "New User", path: "/admin/create-user" },
+    { icon: Shield, label: "New Admin", path: "/admin/users" }
   ];
 
   return (
@@ -82,13 +82,14 @@ function ActionButton({ icon: Icon, label, onClick, delay = 0 }) {
 function LogoutButton({ onClick }) {
   return (
     <motion.button
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 0.95 }}
+      whileHover={{ scale: 1.05, y: -1 }}
+      whileTap={{ scale: 0.98 }}
       onClick={onClick}
-      className="ml-2 p-2.5 sm:p-3 text-slate-700 hover:bg-slate-100 hover:text-red-600 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
+      className="ml-3 p-3 flex items-center gap-2 text-slate-700 hover:text-rose-600 hover:bg-rose-50 rounded-xl shadow-md hover:shadow-lg transition-all duration-200 font-medium"
       title="Logout"
     >
-      <LogOut size={20} />
+      <LogOut size={20} strokeWidth={2} />
+      <span className="hidden lg:inline">Logout</span>
     </motion.button>
   );
 }
