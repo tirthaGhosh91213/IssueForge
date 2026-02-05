@@ -6,7 +6,6 @@ const Issue = require('../models/Issue');
 const User = require('../models/User');
 const sendEmail = require('../utils/sendEmail');
 
-
 /* =================================
    MULTER CONFIG
 ================================= */
@@ -17,15 +16,100 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
+/* =================================
+   1️⃣ GET ALL ISSUES (FILTER + PAGINATION)
+   GET /api/issues
+================================= */
+router.get('/', async (req, res) => {
+  try {
+    const { page=1, limit=5, status, priority, projectId, search } = req.query;
+    const filter = {};
 
+    if (projectId) filter.project = projectId;
+    if (status) filter.status = status;
+    if (priority) filter.priority = priority;
+    if (search) filter.title = { $regex: search, $options: 'i' };
+
+    const skip = (page - 1) * limit;
+    const total = await Issue.countDocuments(filter);
+
+    const issues = await Issue.find(filter)
+      .populate('assignedTo', 'name email')
+      .populate('assignedBy', 'name')
+      .populate('project', 'name')
+      .skip(skip)
+      .limit(parseInt(limit))
+      .sort({ createdAt: -1 });
+
+    res.json({
+      success: true,
+      total,
+      page: Number(page),
+      pages: Math.ceil(total / limit),
+      issues
+    });
+  } catch (err) {
+    res.json({ success: false, message: err.message });
+  }
+});
 
 /* =================================
-   1️⃣ CREATE ISSUE
+   ⭐ 2️⃣ GET ISSUES WITH EMPLOYEES (MOVED TO TOP)
+   GET /api/issues/with-employees ✅ FIXED
+================================= */
+router.get('/with-employees', async (req, res) => {
+  try {
+    const issues = await Issue.find()
+      .populate('assignedTo', 'name email')
+      .populate('assignedBy', 'name')
+      .populate('project', 'name');
+
+    const result = issues.map(issue => ({
+      issueId: issue._id,
+      title: issue.title,
+      project: issue.project?.name,
+      status: issue.status,
+      employee: issue.assignedTo ? `${issue.assignedTo.name} (${issue.assignedTo.email})` : "Not Assigned",
+      assignedBy: issue.assignedBy?.name || "—"
+    }));
+
+    res.json({
+      success: true,
+      total: result.length,
+      issues: result
+    });
+  } catch (err) {
+    res.json({ success: false, message: err.message });
+  }
+});
+
+/* =================================
+   3️⃣ GET ISSUE BY ID (AFTER specific routes)
+   GET /api/issues/:id
+================================= */
+router.get('/:id', async (req, res) => {
+  try {
+    const issue = await Issue.findById(req.params.id)
+      .populate('assignedTo', 'name email')
+      .populate('assignedBy', 'name email')
+      .populate('project', 'name');
+
+    if (!issue) {
+      return res.json({ success: false, message: 'Issue not found' });
+    }
+
+    res.json({ success: true, issue });
+  } catch (err) {
+    res.json({ success: false, message: 'Invalid ID format' });
+  }
+});
+
+/* =================================
+   4️⃣ CREATE ISSUE
    POST /api/issues/create/:projectId
 ================================= */
 router.post('/create/:projectId', upload.single('media'), async (req, res) => {
   try {
-
     const { title, description, priority } = req.body;
 
     const issue = await Issue.create({
@@ -37,89 +121,25 @@ router.post('/create/:projectId', upload.single('media'), async (req, res) => {
       media: req.file?.filename || null
     });
 
-    res.json({ success:true, issue });
-
+    res.json({ success: true, issue });
   } catch (err) {
-    res.json({ success:false, message: err.message });
+    res.json({ success: false, message: err.message });
   }
 });
 
-
-
 /* =================================
-   2️⃣ GET ALL ISSUES (FILTER + PAGINATION)
-   GET /api/issues
-================================= */
-router.get('/', async (req, res) => {
-
-  try {
-
-    const { page=1, limit=5, status, priority, projectId, search } = req.query;
-
-    const filter = {};
-
-    if (projectId) filter.project = projectId;
-    if (status) filter.status = status;
-    if (priority) filter.priority = priority;
-    if (search) filter.title = { $regex: search, $options: 'i' };
-
-    const skip = (page - 1) * limit;
-
-    const total = await Issue.countDocuments(filter);
-
-    const issues = await Issue.find(filter)
-      .populate('assignedTo', 'name email')
-      .populate('assignedBy', 'name')
-      .populate('project', 'name')
-      .skip(skip)
-      .limit(parseInt(limit))
-      .sort({ createdAt:-1 });
-
-    res.json({
-      success:true,
-      total,
-      page:Number(page),
-      pages:Math.ceil(total/limit),
-      issues
-    });
-
-  } catch (err) {
-    res.json({ success:false, message: err.message });
-  }
-});
-
-
-
-/* =================================
-   3️⃣ GET ISSUE BY ID
-================================= */
-router.get('/:id', async (req, res) => {
-
-  const issue = await Issue.findById(req.params.id)
-    .populate('assignedTo', 'name email')
-    .populate('assignedBy', 'name email')
-    .populate('project', 'name');
-
-  res.json({ success:true, issue });
-});
-
-
-
-/* =================================
-   4️⃣ ASSIGN EMPLOYEE
-   PUT /assign/:id
+   5️⃣ ASSIGN EMPLOYEE
+   PUT /api/issues/assign/:id
 ================================= */
 router.put('/assign/:id', async (req, res) => {
-
   try {
-
     const { userId, adminId } = req.body;
 
     const issue = await Issue.findById(req.params.id).populate('project');
     const user = await User.findById(userId);
 
     if (!issue || !user)
-      return res.json({ success:false, message:'Issue/User not found ❌' });
+      return res.json({ success: false, message: 'Issue/User not found ❌' });
 
     issue.assignedTo = userId;
     issue.assignedBy = adminId;
@@ -133,152 +153,183 @@ router.put('/assign/:id', async (req, res) => {
       `You are assigned to issue: ${issue.title}`
     );
 
-    res.json({ success:true, message:'Assigned + email sent ✅' });
-
+    res.json({ success: true, message: 'Assigned + email sent ✅' });
   } catch (err) {
-    res.json({ success:false, message: err.message });
+    res.json({ success: false, message: err.message });
   }
 });
 
-
-
 /* =================================
-   5️⃣ GET ASSIGNMENT DETAILS
-   GET /assignment/:issueId
+   6️⃣ GET ASSIGNMENT DETAILS
+   GET /api/issues/assignment/:issueId
 ================================= */
 router.get('/assignment/:issueId', async (req, res) => {
+  try {
+    const issue = await Issue.findById(req.params.issueId)
+      .populate('assignedTo', 'name email')
+      .populate('assignedBy', 'name email')
+      .populate('project', 'name');
 
-  const issue = await Issue.findById(req.params.issueId)
-    .populate('assignedTo', 'name email')
-    .populate('assignedBy', 'name email')
-    .populate('project', 'name');
+    if (!issue) {
+      return res.json({ success: false, message: 'Issue not found' });
+    }
 
-  res.json({
-    success:true,
-    issue: issue.title,
-    project: issue.project,
-    employee: issue.assignedTo,
-    assignedBy: issue.assignedBy,
-    assignedAt: issue.assignedAt
-  });
+    res.json({
+      success: true,
+      issue: issue.title,
+      project: issue.project?.name,
+      employee: issue.assignedTo,
+      assignedBy: issue.assignedBy,
+      assignedAt: issue.assignedAt
+    });
+  } catch (err) {
+    res.json({ success: false, message: 'Invalid ID format' });
+  }
 });
 
-
-
 /* =================================
-   6️⃣ REMOVE EMPLOYEE
+   7️⃣ REMOVE EMPLOYEE
+   PUT /api/issues/remove-employee/:id
 ================================= */
 router.put('/remove-employee/:id', async (req, res) => {
+  try {
+    const issue = await Issue.findByIdAndUpdate(
+      req.params.id,
+      { assignedTo: null, assignedBy: null, assignedAt: null },
+      { new: true }
+    );
 
-  const issue = await Issue.findByIdAndUpdate(
-    req.params.id,
-    { assignedTo:null, assignedBy:null, assignedAt:null },
-    { new:true }
-  );
+    if (!issue) {
+      return res.json({ success: false, message: 'Issue not found' });
+    }
 
-  res.json({ success:true, issue });
+    res.json({ success: true, issue });
+  } catch (err) {
+    res.json({ success: false, message: err.message });
+  }
 });
 
-
-
 /* =================================
-   7️⃣ UPDATE ISSUE STATUS
-   PUT /status/:id
+   8️⃣ UPDATE ISSUE STATUS
+   PUT /api/issues/status/:id
 ================================= */
 router.put('/status/:id', async (req, res) => {
+  try {
+    const issue = await Issue.findByIdAndUpdate(
+      req.params.id,
+      { status: req.body.status },
+      { new: true }
+    );
 
-  const issue = await Issue.findByIdAndUpdate(
-    req.params.id,
-    { status:req.body.status },
-    { new:true }
-  );
+    if (!issue) {
+      return res.json({ success: false, message: 'Issue not found' });
+    }
 
-  res.json({ success:true, issue });
+    res.json({ success: true, issue });
+  } catch (err) {
+    res.json({ success: false, message: err.message });
+  }
 });
 
-
-
 /* =================================
-   8️⃣ GET STATUS ONLY
-   GET /status/:id
+   9️⃣ GET STATUS ONLY
+   GET /api/issues/status/:id
 ================================= */
 router.get('/status/:id', async (req, res) => {
+  try {
+    const issue = await Issue.findById(req.params.id).select('status title');
 
-  const issue = await Issue.findById(req.params.id).select('status title');
+    if (!issue) {
+      return res.json({ success: false, message: 'Issue not found' });
+    }
 
-  res.json({
-    success:true,
-    title: issue.title,
-    status: issue.status
-  });
+    res.json({
+      success: true,
+      title: issue.title,
+      status: issue.status
+    });
+  } catch (err) {
+    res.json({ success: false, message: 'Invalid ID format' });
+  }
 });
 
-
-
 /* =================================
-   9️⃣ ADD COMMENT
-   POST /comment/:id
+   🔟 ADD COMMENT
+   POST /api/issues/comment/:id
 ================================= */
 router.post('/comment/:id', async (req, res) => {
-
-  const issue = await Issue.findByIdAndUpdate(
-    req.params.id,
-    {
-      $push: {
-        comments: {
-          text: req.body.text,
-          createdAt: new Date()
+  try {
+    const issue = await Issue.findByIdAndUpdate(
+      req.params.id,
+      {
+        $push: {
+          comments: {
+            text: req.body.text,
+            createdAt: new Date()
+          }
         }
-      }
-    },
-    { new:true }
-  );
+      },
+      { new: true }
+    );
 
-  res.json({ success:true, issue });
+    if (!issue) {
+      return res.json({ success: false, message: 'Issue not found' });
+    }
+
+    res.json({ success: true, issue });
+  } catch (err) {
+    res.json({ success: false, message: err.message });
+  }
 });
 
-
-
 /* =================================
-   🔟 GET COMMENTS
-   GET /comments/:id
+   1️⃣1️⃣ GET COMMENTS
+   GET /api/issues/comments/:id
 ================================= */
 router.get('/comments/:id', async (req, res) => {
+  try {
+    const issue = await Issue.findById(req.params.id)
+      .select('title comments');
 
-  const issue = await Issue.findById(req.params.id)
-    .select('title comments');
+    if (!issue) {
+      return res.json({ success: false, message: 'Issue not found' });
+    }
 
-  res.json({
-    success:true,
-    comments: issue.comments
-  });
+    res.json({
+      success: true,
+      comments: issue.comments
+    });
+  } catch (err) {
+    res.json({ success: false, message: 'Invalid ID format' });
+  }
 });
 
-
-
 /* =================================
-   1️⃣1️⃣ GET ISSUES BY PROJECT
+   1️⃣2️⃣ GET ISSUES BY PROJECT
+   GET /api/issues/project/:projectId
 ================================= */
 router.get('/project/:projectId', async (req, res) => {
+  try {
+    const issues = await Issue.find({ project: req.params.projectId })
+      .populate('assignedTo', 'name email');
 
-  const issues = await Issue.find({ project:req.params.projectId })
-    .populate('assignedTo', 'name email');
-
-  res.json({ success:true, issues });
+    res.json({ success: true, issues });
+  } catch (err) {
+    res.json({ success: false, message: err.message });
+  }
 });
-
-
 
 /* =================================
-   1️⃣2️⃣ DELETE ISSUE
+   1️⃣3️⃣ DELETE ISSUE
+   DELETE /api/issues/:id
 ================================= */
 router.delete('/:id', async (req, res) => {
-
-  await Issue.findByIdAndDelete(req.params.id);
-
-  res.json({ success:true, message:'Deleted ✅' });
+  try {
+    await Issue.findByIdAndDelete(req.params.id);
+    res.json({ success: true, message: 'Deleted ✅' });
+  } catch (err) {
+    res.json({ success: false, message: err.message });
+  }
 });
-
-
 
 module.exports = router;
