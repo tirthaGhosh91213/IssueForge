@@ -1,16 +1,50 @@
 import { motion } from "framer-motion";
-import { Search, X, Check, User, Loader2, Mail } from "lucide-react";
+import { Search, X, Check, User, Loader2, Mail, Users } from "lucide-react";
+import { useState, useEffect } from "react";
 
 export default function AssignModal({ 
   assignModal, 
-  filteredEmployees, 
+  filteredEmployees,  // ✅ Will be filtered by parent
+  issueId,            // ✅ NEW: Need issue ID to check assigned employees
+  currentIssue,       // ✅ NEW: Current issue data to get assignedTo
   onClose, 
   onEmployeeSearchChange, 
   onToggleEmployee, 
   onAssign,
-  isAssigning,     // ✅ NEW: Loading state
-  onSuccessClose   // ✅ NEW: Success popup close
+  isAssigning,
+  onSuccessClose
 }) {
+  // ✅ Local state for already assigned employees tracking
+  const [alreadyAssignedIds, setAlreadyAssignedIds] = useState(new Set());
+
+  // ✅ Filter employees locally - Hide already assigned ones
+  const availableEmployees = filteredEmployees.filter(emp => 
+    !alreadyAssignedIds.has(emp._id)
+  );
+
+  // ✅ Search within available employees only
+  const searchFilteredEmployees = availableEmployees.filter(emp =>
+    emp.name.toLowerCase().includes(assignModal.employeeSearch.toLowerCase()) ||
+    emp.email.toLowerCase().includes(assignModal.employeeSearch.toLowerCase()) ||
+    emp.empId?.toLowerCase().includes(assignModal.employeeSearch.toLowerCase())
+  );
+
+  // ✅ Update already assigned when currentIssue changes
+  useEffect(() => {
+    if (currentIssue?.assignedTo) {
+      const assignedIds = currentIssue.assignedTo.map(emp => emp._id);
+      setAlreadyAssignedIds(new Set(assignedIds));
+    }
+  }, [currentIssue]);
+
+  // ✅ Update already assigned when issueId changes (from parent prop)
+  useEffect(() => {
+    if (issueId && assignModal.issueId) {
+      // This would typically fetch current issue data, but since parent passes it
+      // we rely on currentIssue prop
+    }
+  }, [issueId, assignModal.issueId]);
+
   return (
     <>
       {/* MAIN ASSIGN MODAL */}
@@ -24,11 +58,22 @@ export default function AssignModal({
           >
             <div className="p-8 border-b border-gray-200">
               <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-2xl font-bold text-gray-900">Assign Team Members</h3>
-                  <p className="text-sm text-gray-500 mt-1">Select employees for this issue</p>
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center shadow-sm">
+                    <Users className="w-6 h-6 text-indigo-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-bold text-gray-900">Assign Team Members</h3>
+                    <p className="text-sm text-gray-500 mt-1">
+                      {availableEmployees.length} available • {alreadyAssignedIds.size} already assigned
+                    </p>
+                  </div>
                 </div>
-                <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-500 rounded-xl hover:bg-gray-100 transition-colors" disabled={isAssigning}>
+                <button 
+                  onClick={onClose} 
+                  className="p-2 text-gray-400 hover:text-gray-500 rounded-xl hover:bg-gray-100 transition-colors" 
+                  disabled={isAssigning}
+                >
                   <X className="w-6 h-6" />
                 </button>
               </div>
@@ -38,7 +83,7 @@ export default function AssignModal({
               <div className="relative mb-6">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
-                  placeholder="Search employees by name or email..."
+                  placeholder="Search available employees by name, email or ID..."
                   value={assignModal.employeeSearch}
                   onChange={onEmployeeSearchChange}
                   disabled={isAssigning}
@@ -46,23 +91,42 @@ export default function AssignModal({
                 />
               </div>
 
+              {/* ✅ Selected Count - Only available employees */}
               {assignModal.selectedEmployees.size > 0 && (
                 <div className="mb-6 p-4 bg-indigo-50 border border-indigo-200 rounded-xl">
                   <p className="text-sm font-semibold text-indigo-800 flex items-center gap-2">
                     <Check className="w-4 h-4" />
-                    {assignModal.selectedEmployees.size} employee{assignModal.selectedEmployees.size > 1 ? 's' : ''} selected
+                    {assignModal.selectedEmployees.size} available employee{assignModal.selectedEmployees.size > 1 ? 's' : ''} selected
                   </p>
                 </div>
               )}
 
-              {filteredEmployees.length === 0 ? (
-                <div className="text-center py-12 text-gray-500">
-                  <Search className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                  <p className="text-lg font-medium">No employees found</p>
+              {/* ✅ Already Assigned Warning */}
+              {alreadyAssignedIds.size > 0 && availableEmployees.length === 0 && (
+                <div className="mb-6 p-6 bg-yellow-50 border-2 border-yellow-200 rounded-2xl text-center">
+                  <Users className="w-16 h-16 text-yellow-400 mx-auto mb-4" />
+                  <h4 className="text-lg font-semibold text-yellow-900 mb-2">No Available Employees</h4>
+                  <p className="text-yellow-800 text-sm">
+                    All {alreadyAssignedIds.size} employees are already assigned to this issue
+                  </p>
                 </div>
+              )}
+
+              {searchFilteredEmployees.length === 0 ? (
+                alreadyAssignedIds.size === 0 ? (
+                  <div className="text-center py-12 text-gray-500">
+                    <Search className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                    <p className="text-lg font-medium">
+                      {assignModal.employeeSearch ? 'No matching employees' : 'No employees available'}
+                    </p>
+                    <p className="text-sm mt-2">
+                      {assignModal.employeeSearch ? 'Try different search terms' : 'Load employees first'}
+                    </p>
+                  </div>
+                ) : null // Don't show empty state if already assigned warning is shown
               ) : (
                 <div className="space-y-3">
-                  {filteredEmployees.map((emp) => {
+                  {searchFilteredEmployees.map((emp) => {
                     const isSelected = assignModal.selectedEmployees.has(emp._id);
                     return (
                       <motion.button
@@ -103,7 +167,7 @@ export default function AssignModal({
               )}
             </div>
 
-            {/* ✅ SPINNER DURING EMAIL SENDING */}
+            {/* ✅ SPINNER DURING ASSIGNING */}
             {isAssigning && (
               <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-10">
                 <div className="text-center p-8">

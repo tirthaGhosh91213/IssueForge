@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 
@@ -23,35 +23,63 @@ export default function ProjectDetails() {
     issueId: null,
     employeeSearch: "",
     selectedEmployees: new Set(),
-    success: false  // ✅ Added for success popup
+    success: false
   });
-  const [isAssigning, setIsAssigning] = useState(false);  // ✅ Loading state
+  const [isAssigning, setIsAssigning] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState({ open: false, type: '', id: null });
+  const [loading, setLoading] = useState(false); // ✅ Global loading state
 
-  // ================= FETCH DATA =================
-  useEffect(() => {
-    fetch(`http://localhost:5000/api/admin/project/${id}`)
-      .then(r => r.json())
-      .then(d => setProject(d.project));
-
-    fetchIssues();
-    fetchEmployees();  // ✅ Fixed: Now called
+  // ✅ AUTO REFRESH FUNCTIONS
+  const refreshProject = useCallback(async () => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/admin/project/${id}`);
+      const data = await response.json();
+      setProject(data.project);
+    } catch (error) {
+      console.error('Error refreshing project:', error);
+    }
   }, [id]);
 
-  const fetchIssues = () => {
-    fetch(`http://localhost:5000/api/issues/project/${id}`)
-      .then(r => r.json())
-      .then(d => {
-        if (d.success) setIssues(d.issues || []);
-      })
-      .catch(err => console.error('Error fetching issues:', err));
-  };
+  const refreshIssues = useCallback(async () => {
+    setLoading(true);
+    try {
+      const response = await fetch(`http://localhost:5000/api/issues/project/${id}`);
+      const data = await response.json();
+      if (data.success) {
+        setIssues(data.issues || []);
+      }
+    } catch (error) {
+      console.error('Error refreshing issues:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [id]);
 
-  const fetchEmployees = () => {
-    fetch("http://localhost:5000/api/admin/users")
-      .then(r => r.json())
-      .then(d => setEmployees(d.users || []));
-  };
+  const refreshEmployees = useCallback(async () => {
+    try {
+      const response = await fetch("http://localhost:5000/api/admin/users");
+      const data = await response.json();
+      setEmployees(data.users || []);
+    } catch (error) {
+      console.error('Error refreshing employees:', error);
+    }
+  }, []);
+
+  // ✅ MAIN REFRESH FUNCTION - Calls ALL refreshes
+  const refreshAllData = useCallback(async () => {
+    setLoading(true);
+    await Promise.allSettled([
+      refreshProject(),
+      refreshIssues(),
+      refreshEmployees()
+    ]);
+    setLoading(false);
+  }, [refreshProject, refreshIssues, refreshEmployees]);
+
+  // Initial load
+  useEffect(() => {
+    refreshAllData();
+  }, [id, refreshAllData]);
 
   // ================= ASSIGN LOGIC =================
   const toggleEmployee = (empId) => {
@@ -66,18 +94,18 @@ export default function ProjectDetails() {
       issueId: null, 
       employeeSearch: "", 
       selectedEmployees: new Set(),
-      success: false  // ✅ Reset success
+      success: false
     });
   };
 
-  // ✅ SINGLE & CORRECT handleAssignMultiple
+  // ✅ FIXED: handleAssignMultiple with AUTO REFRESH
   const handleAssignMultiple = async (issueId) => {
     const adminId = getAdminId();
     const userIds = Array.from(assignModal.selectedEmployees);
 
     if (userIds.length === 0) return;
 
-    setIsAssigning(true); // ✅ Spinner ON
+    setIsAssigning(true);
 
     try {
       await fetch(`http://localhost:5000/api/issues/assign/${issueId}`, {
@@ -86,21 +114,23 @@ export default function ProjectDetails() {
         body: JSON.stringify({ adminId, userIds })
       });
 
-      // ✅ SUCCESS: Show success popup
+      // ✅ AUTO REFRESH AFTER SUCCESS
+      await refreshAllData();
+
+      // Show success popup
       setAssignModal(prev => ({
         ...prev,
-        success: true  // ✅ Trigger success popup
+        success: true
       }));
 
       setTimeout(() => {
         closeAssignModal();
-        fetchIssues();
-      }, 2000); // Auto close after 2s
+      }, 2000);
 
     } catch (error) {
       console.error('Assign error:', error);
     } finally {
-      setIsAssigning(false); // ✅ Spinner OFF
+      setIsAssigning(false);
     }
   };
 
@@ -108,15 +138,22 @@ export default function ProjectDetails() {
   const confirmDeleteProject = () => setDeleteConfirm({ open: true, type: 'project', id });
   const confirmDeleteIssue = (issueId) => setDeleteConfirm({ open: true, type: 'issue', id: issueId });
 
+  // ✅ FIXED: handleDeleteConfirmed with AUTO REFRESH
   const handleDeleteConfirmed = async () => {
-    if (deleteConfirm.type === 'project') {
-      await fetch(`http://localhost:5000/api/admin/project/${deleteConfirm.id}`, { method: "DELETE" });
-      navigate(-1);
-    } else {
-      await fetch(`http://localhost:5000/api/issues/${deleteConfirm.id}`, { method: "DELETE" });
-      fetchIssues();
+    try {
+      if (deleteConfirm.type === 'project') {
+        await fetch(`http://localhost:5000/api/admin/project/${deleteConfirm.id}`, { method: "DELETE" });
+        navigate(-1);
+      } else {
+        await fetch(`http://localhost:5000/api/issues/${deleteConfirm.id}`, { method: "DELETE" });
+        // ✅ AUTO REFRESH AFTER ISSUE DELETE
+        await refreshAllData();
+      }
+    } catch (error) {
+      console.error('Delete error:', error);
+    } finally {
+      setDeleteConfirm({ open: false, type: '', id: null });
     }
-    setDeleteConfirm({ open: false, type: '', id: null });
   };
 
   const handleEditIssue = (issueId) => {
@@ -135,8 +172,13 @@ export default function ProjectDetails() {
       )
     : employees;
 
+  // ✅ MANUAL REFRESH BUTTON HANDLER
+  const handleManualRefresh = async () => {
+    await refreshAllData();
+  };
+
   // Loading
-  if (!project) {
+  if (!project && !loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center p-12">
@@ -151,6 +193,8 @@ export default function ProjectDetails() {
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         
+        {/* 🎯 REFRESH BUTTON - TOP RIGHT */}
+
         {/* 🎯 ALL COMPONENTS CONNECTED */}
         <ProjectHeader 
           project={project} 
@@ -158,7 +202,7 @@ export default function ProjectDetails() {
           onDeleteProject={confirmDeleteProject} 
         />
 
-        {/* ✅ FIXED: Correct onAssignClick prop */}
+        {/* ✅ PASS refreshIssues to IssuesSection */}
         <IssuesSection 
           filteredIssues={filteredIssues}
           search={search}
@@ -166,9 +210,12 @@ export default function ProjectDetails() {
           onAssignClick={(modalData) => setAssignModal({ 
             ...modalData, 
             open: true 
-          })}  // ✅ Fixed: Pass full modal data
+          })}
           onEditIssue={handleEditIssue}
           onDeleteIssue={confirmDeleteIssue}
+          refreshIssues={refreshAllData}  // ✅ AUTO REFRESH PROP
+          loading={loading}
+          adminId={getAdminId()}
         />
 
         <AssignModal 
@@ -177,9 +224,11 @@ export default function ProjectDetails() {
           onClose={closeAssignModal}
           onEmployeeSearchChange={(e) => setAssignModal(prev => ({ ...prev, employeeSearch: e.target.value }))}
           onToggleEmployee={toggleEmployee}
+           issueId={assignModal.issueId}           // ✅ NEW
+  currentIssue={issues.find(issue => issue._id === assignModal.issueId)} 
           onAssign={() => handleAssignMultiple(assignModal.issueId)}
-          isAssigning={isAssigning}           // ✅ Spinner support
-          onSuccessClose={closeAssignModal}   // ✅ Success popup
+          isAssigning={isAssigning}
+          onSuccessClose={closeAssignModal}
         />
 
         <DeleteConfirmModal 

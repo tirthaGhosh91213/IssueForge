@@ -128,6 +128,52 @@ router.post('/create/:projectId', upload.single('media'), async (req, res) => {
 });
 
 /* =================================
+   🔄 UPDATE ISSUE
+   PUT /api/issues/update/:id
+================================= */
+router.put('/update/:id', upload.single('media'), async (req, res) => {
+  try {
+    const { title, description, priority, status } = req.body;
+
+    const updateData = {};
+
+    // update only provided fields
+    if (title) updateData.title = title;
+    if (description) updateData.description = description;
+    if (priority) updateData.priority = priority;
+    if (status) updateData.status = status;
+
+    if (req.file) {
+      updateData.media = req.file.filename;
+    }
+
+    const issue = await Issue.findByIdAndUpdate(
+      req.params.id,
+      updateData,
+      { new: true }
+    );
+
+    if (!issue) {
+      return res.json({
+        success: false,
+        message: 'Issue not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Issue updated successfully ✅',
+      issue
+    });
+  } catch (err) {
+    res.json({
+      success: false,
+      message: err.message
+    });
+  }
+});
+
+/* =================================
    ⭐ 5️⃣ ASSIGN MULTIPLE EMPLOYEES
    PUT /api/issues/assign/:id
 ================================= */
@@ -135,38 +181,97 @@ router.put('/assign/:id', async (req, res) => {
   try {
     const { userIds, adminId } = req.body;
 
-    if (!Array.isArray(userIds) || userIds.length === 0)
-      return res.json({ success: false, message: 'userIds array required' });
+    if (!Array.isArray(userIds) || userIds.length === 0) {
+      return res.json({
+        success: false,
+        message: 'userIds array required'
+      });
+    }
 
     const issue = await Issue.findById(req.params.id);
-    if (!issue)
+    if (!issue) {
       return res.json({ success: false, message: 'Issue not found' });
+    }
 
-    const users = await User.find({ _id: { $in: userIds } });
+    const existingIds = issue.assignedTo.map(id => id.toString());
 
-    issue.assignedTo = userIds;
+    // filter only NEW users
+    const newUserIds = userIds.filter(
+      id => !existingIds.includes(id)
+    );
+
+    if (newUserIds.length === 0) {
+      return res.json({
+        success: false,
+        message: 'Users already assigned'
+      });
+    }
+
+    issue.assignedTo.push(...newUserIds);
     issue.assignedBy = adminId;
     issue.assignedAt = new Date();
     await issue.save();
 
-    // Send email to all assigned users
+    const users = await User.find({ _id: { $in: newUserIds } });
+
+    // send email only to new users
     for (const user of users) {
       await sendEmail(
         user.email,
         '🚀 Issue Assigned',
-        `You are assigned to issue: ${issue.title}`
+        `You have been assigned to issue: ${issue.title}`
       );
     }
 
     res.json({
       success: true,
-      message: 'Employees assigned + emails sent ✅',
-      assignedUsers: users.map(u => ({ id: u._id, name: u.name }))
+      message: 'Employee(s) assigned successfully ✅',
+      assignedUsers: users.map(u => ({
+        id: u._id,
+        name: u.name
+      }))
     });
   } catch (err) {
     res.json({ success: false, message: err.message });
   }
 });
+
+// remove emp
+
+router.put('/remove-employee/:issueId', async (req, res) => {
+  try {
+    const { userId } = req.body;
+
+    if (!userId) {
+      return res.json({
+        success: false,
+        message: 'userId required'
+      });
+    }
+
+    const issue = await Issue.findById(req.params.issueId);
+    if (!issue) {
+      return res.json({ success: false, message: 'Issue not found' });
+    }
+
+    issue.assignedTo = issue.assignedTo.filter(
+      id => id.toString() !== userId
+    );
+
+    await issue.save();
+
+    res.json({
+      success: true,
+      message: 'Employee removed successfully ✅',
+      remainingEmployees: issue.assignedTo
+    });
+  } catch (err) {
+    res.json({ success: false, message: err.message });
+  }
+});
+
+
+
 /* =================================
    6️⃣ GET ASSIGNMENT DETAILS
    GET /api/issues/assignment/:issueId

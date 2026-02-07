@@ -11,6 +11,7 @@ import UpdateProject from "./components/UpdateProject";
 import CreateIssue from "./pages/CreateIssue";
 import ProjectDetails from "./components/ProjectDetails";
 import ProjectIssues from "./components/ProjectIssues";
+import EditIssue from "./components/EditIssue";
 
 const App = () => {
   const auth = JSON.parse(localStorage.getItem("auth"));
@@ -34,6 +35,7 @@ if (auth && Date.now() > auth.expires) {
           <Route path="/admin/issues/create/:projectId" element={<CreateIssue />} />
           <Route path="/admin/project/:id" element={<ProjectDetails />} />
           <Route path="/admin/project/:id/issues" element={<ProjectIssues />} />
+          <Route path="/admin/issues/edit/:issueId" element={<EditIssue />} />
 
 
 
