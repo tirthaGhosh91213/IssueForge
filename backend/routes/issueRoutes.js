@@ -128,37 +128,45 @@ router.post('/create/:projectId', upload.single('media'), async (req, res) => {
 });
 
 /* =================================
-   5️⃣ ASSIGN EMPLOYEE
+   ⭐ 5️⃣ ASSIGN MULTIPLE EMPLOYEES
    PUT /api/issues/assign/:id
 ================================= */
 router.put('/assign/:id', async (req, res) => {
   try {
-    const { userId, adminId } = req.body;
+    const { userIds, adminId } = req.body;
 
-    const issue = await Issue.findById(req.params.id).populate('project');
-    const user = await User.findById(userId);
+    if (!Array.isArray(userIds) || userIds.length === 0)
+      return res.json({ success: false, message: 'userIds array required' });
 
-    if (!issue || !user)
-      return res.json({ success: false, message: 'Issue/User not found ❌' });
+    const issue = await Issue.findById(req.params.id);
+    if (!issue)
+      return res.json({ success: false, message: 'Issue not found' });
 
-    issue.assignedTo = userId;
+    const users = await User.find({ _id: { $in: userIds } });
+
+    issue.assignedTo = userIds;
     issue.assignedBy = adminId;
     issue.assignedAt = new Date();
-
     await issue.save();
 
-    await sendEmail(
-      user.email,
-      '🚀 Issue Assigned',
-      `You are assigned to issue: ${issue.title}`
-    );
+    // Send email to all assigned users
+    for (const user of users) {
+      await sendEmail(
+        user.email,
+        '🚀 Issue Assigned',
+        `You are assigned to issue: ${issue.title}`
+      );
+    }
 
-    res.json({ success: true, message: 'Assigned + email sent ✅' });
+    res.json({
+      success: true,
+      message: 'Employees assigned + emails sent ✅',
+      assignedUsers: users.map(u => ({ id: u._id, name: u.name }))
+    });
   } catch (err) {
     res.json({ success: false, message: err.message });
   }
 });
-
 /* =================================
    6️⃣ GET ASSIGNMENT DETAILS
    GET /api/issues/assignment/:issueId
