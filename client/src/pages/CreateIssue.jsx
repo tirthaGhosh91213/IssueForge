@@ -184,25 +184,7 @@ export default function CreateIssue() {
             <option value="high">High</option>
           </select>
         </div>
-
-        {/* ASSIGN EMPLOYEE */}
-        <div>
-          <label className="flex items-center gap-2 mb-2 font-semibold">
-            <User size={16} /> Assign Employee
-          </label>
-          <select
-            name="assignedTo"
-            onChange={handleChange}
-            className="w-full p-3 border rounded-xl"
-          >
-            <option value="">Select Employee</option>
-            {employees.map((emp) => (
-              <option key={emp._id} value={emp._id}>
-                {emp.name} ({emp.empId})
-              </option>
-            ))}
-          </select>
-        </div>
+       
 
         {/* DRAG & DROP UPLOAD */}
         <div

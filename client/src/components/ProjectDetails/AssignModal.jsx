@@ -49,7 +49,8 @@ export default function AssignModal({
     <>
       {/* MAIN ASSIGN MODAL */}
       {assignModal.open && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-75 z-50 flex items-center justify-center p-4" onClick={onClose}>
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-md z-50 flex items-center justify-center p-4"
+ onClick={onClose}>
           <motion.div 
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}

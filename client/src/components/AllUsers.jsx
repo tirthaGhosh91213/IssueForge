@@ -179,7 +179,7 @@ export default function AllUsers() {
                       <motion.button
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
-                        onClick={() => navigate(`/admin/assign-task/${user._id}`)}
+                        onClick={() => navigate(`/admin/project/issues`)}
                         className="px-4 py-2 bg-gradient-to-r from-blue-500 to-violet-600 text-white rounded-xl shadow-lg hover:shadow-xl hover:from-blue-600 hover:to-violet-700 transition-all duration-300 font-medium text-sm flex items-center gap-2"
                       >
                         <Plus size={16} />
