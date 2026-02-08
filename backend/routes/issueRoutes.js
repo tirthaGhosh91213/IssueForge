@@ -444,5 +444,48 @@ router.delete('/:id', async (req, res) => {
     res.json({ success: false, message: err.message });
   }
 });
+/* =================================
+   ⭐ GET ISSUES ASSIGNED TO ONE USER
+   GET /api/issues/assigned/user/:userId
+================================= */
+router.get('/assigned/user/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    // Optional: check if user exists
+    const userExists = await User.findById(userId);
+    if (!userExists) {
+      return res.json({
+        success: false,
+        message: 'User not found ❌'
+      });
+    }
+
+    const issues = await Issue.find({
+      assignedTo: userId
+    })
+      .populate('project', 'name')
+      .populate('assignedBy', 'name email')
+      .select('title status priority project assignedAt');
+
+    res.json({
+      success: true,
+      user: {
+        id: userExists._id,
+        name: userExists.name,
+        email: userExists.email
+      },
+      totalIssues: issues.length,
+      issues
+    });
+
+  } catch (err) {
+    res.json({
+      success: false,
+      message: err.message
+    });
+  }
+});
+
 
 module.exports = router;
