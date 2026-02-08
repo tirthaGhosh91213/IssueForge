@@ -17,6 +17,8 @@ import AllProjects from "./components/AllProjects";
 import UserDetailsPage from "./pages/UserDetailsPage";
 import Dashboard from "./pages/UserDashboard/Dashboard";
 import UserProjectDetails from "./pages/UserDashboard/UserProjectDetails";
+import UserCreateIssue from "./pages/UserDashboard/UserCreateIssue";
+import MyTasks from "./pages/UserDashboard/MyTasks";
 
 const App = () => {
   const auth = JSON.parse(localStorage.getItem("auth"));
@@ -45,6 +47,8 @@ if (auth && Date.now() > auth.expires) {
           <Route path="/user" element={<Dashboard />} />
           <Route path="/admin/user-details/:userId" element={<UserDetailsPage />} />
           <Route path="/user/project/:projectId" element={<UserProjectDetails />} />
+          <Route path="/user/create-issue" element={<UserCreateIssue />} />
+          <Route path="/user/my-task" element={<MyTasks />} />
 
 
 

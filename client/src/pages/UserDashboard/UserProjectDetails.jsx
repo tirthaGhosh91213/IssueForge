@@ -11,6 +11,7 @@ import {
   CodeBracketIcon,
   XMarkIcon
 } from '@heroicons/react/24/outline';
+import { ChevronLeftIcon } from 'lucide-react';
 
 const UserProjectDetails = () => {
   const { projectId } = useParams();
@@ -69,7 +70,7 @@ const UserProjectDetails = () => {
       {/* HEADER */}
       <div className="bg-white/80 backdrop-blur-md border-b border-slate-200 sticky top-0 z-40 px-6 h-16 flex items-center justify-between">
         <button onClick={() => navigate('/user')} className="flex items-center text-sm font-bold text-slate-600 hover:text-indigo-600 transition-colors">
-          <ArrowLeftIcon className="w-4 h-4 mr-2" /> Back to Dashboard
+           <ChevronLeftIcon className="w-4 h-4 transition-transform group-hover:-translate-x-1" />  RETURN
         </button>
         <button onClick={() => navigate(`/user/create-issue?projectId=${projectId}`)} className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2 rounded-xl text-sm font-bold shadow-md">
           <PlusIcon className="w-4 h-4 inline mr-1" /> New Issue
