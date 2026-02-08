@@ -15,6 +15,8 @@ import EditIssue from "./components/EditIssue";
 import AllUsers from "./components/AllUsers";
 import AllProjects from "./components/AllProjects";
 import UserDetailsPage from "./pages/UserDetailsPage";
+import Dashboard from "./pages/UserDashboard/Dashboard";
+import UserProjectDetails from "./pages/UserDashboard/UserProjectDetails";
 
 const App = () => {
   const auth = JSON.parse(localStorage.getItem("auth"));
@@ -40,7 +42,9 @@ if (auth && Date.now() > auth.expires) {
           <Route path="/admin/project/issues" element={<ProjectIssues />} />
           <Route path="/admin/issues/edit/:issueId" element={<EditIssue />} />
           <Route path="/admin/projects" element={<AllProjects />} />
+          <Route path="/user" element={<Dashboard />} />
           <Route path="/admin/user-details/:userId" element={<UserDetailsPage />} />
+          <Route path="/user/project/:projectId" element={<UserProjectDetails />} />
 
 
 
