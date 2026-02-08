@@ -1,94 +1,211 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { 
-  ExclamationCircleIcon, 
-  CheckCircleIcon, 
-  ClockIcon,
-  ChevronRightIcon
+  ChatBubbleLeftRightIcon, 
+  UserCircleIcon,
+  VideoCameraIcon,
+  PhotoIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
+  PaperAirplaneIcon
 } from '@heroicons/react/24/outline';
 
-const IssueTable = ({ issues }) => {
-  return (
-    <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
-      {/* Header Section */}
-      <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/30">
-        <div>
-          <h2 className="text-xl font-black text-slate-900 tracking-tight">Project Issues</h2>
-          <p className="text-sm text-slate-500 font-medium">Tracking lifecycle of reported bugs and improvements</p>
-        </div>
-        <div className="flex items-center gap-2 px-4 py-1.5 bg-white border border-slate-200 rounded-full shadow-sm">
-          <span className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse"></span>
-          <span className="text-xs font-bold text-slate-600 uppercase tracking-tighter">
-            {issues.length} Active Records
-          </span>
-        </div>
-      </div>
+const IssueTable = ({ issues: rawData }) => {
+  const user = JSON.parse(localStorage.getItem('user'));
+  const currentUserId = user?._id || user?.id || "697f7b415338fe4b865cd176";
 
+  const [issuesList, setIssuesList] = useState([]);
+  const [expandedIssue, setExpandedIssue] = useState(null);
+  const [visibleCount, setVisibleCount] = useState({});
+  const [commentText, setCommentText] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    const data = Array.isArray(rawData) ? rawData : (rawData?.issues || []);
+    setIssuesList(data);
+  }, [rawData]);
+
+  const toggleExpand = (id) => {
+    setExpandedIssue(expandedIssue === id ? null : id);
+    if (expandedIssue !== id) {
+      setVisibleCount(prev => ({ ...prev, [id]: 2 }));
+    }
+  };
+
+  const handlePostComment = async (issueId) => {
+    if (!commentText.trim()) return;
+    setIsSubmitting(true);
+    try {
+      const res = await axios.post(`http://localhost:5000/api/issues/comment/${issueId}`, {
+        text: commentText
+      });
+      if (res.data.success) {
+        setIssuesList(prev => prev.map(issue => 
+          issue._id === issueId ? res.data.issue : issue
+        ));
+        setCommentText("");
+      }
+    } catch (err) {
+      console.error("Comment failed", err);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const getPriorityColor = (priority) => {
+    switch (priority?.toLowerCase()) {
+      case 'high': return 'text-rose-600 bg-rose-50 border-rose-100';
+      case 'medium': return 'text-amber-600 bg-amber-50 border-amber-100';
+      default: return 'text-slate-500 bg-slate-50 border-slate-200';
+    }
+  };
+
+  return (
+    <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden mt-6 font-sans">
       <div className="overflow-x-auto">
-        {issues.length > 0 ? (
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="text-[11px] font-black text-slate-400 uppercase tracking-[0.1em] border-b border-slate-50">
-                <th className="px-8 py-5">Status</th>
-                <th className="px-8 py-5">Summary</th>
-                <th className="px-8 py-5">Priority</th>
-                <th className="px-8 py-5 text-right">Filed On</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-50">
-              {issues.map((issue) => (
-                <tr key={issue._id} className="group hover:bg-slate-50/50 transition-colors cursor-default">
-                  <td className="px-8 py-5">
-                    {issue.status === 'Resolved' ? (
-                      <div className="flex items-center gap-2 text-emerald-600">
-                        <CheckCircleIcon className="w-5 h-5" />
-                        <span className="text-xs font-black uppercase tracking-wider">Resolved</span>
+        <table className="w-full text-left border-collapse">
+          <thead>
+            <tr className="bg-slate-50/80 border-b border-slate-200">
+              <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Incident Details</th>
+              <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
+              <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Priority</th>
+              <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Assignment</th>
+              <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Engagement</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {issuesList.map((issue) => {
+              const isExpanded = expandedIssue === issue._id;
+              const currentVisible = visibleCount[issue._id] || 2;
+
+              return (
+                <React.Fragment key={issue._id}>
+                  <tr className={`group transition-colors ${isExpanded ? 'bg-slate-50/50' : 'hover:bg-slate-50/30'}`}>
+                    <td className="px-6 py-5">
+                      <div className="flex items-start gap-3">
+                        <div className="mt-1">
+                          {issue.media?.endsWith('.mp4') ? <VideoCameraIcon className="w-4 h-4 text-slate-400" /> : <PhotoIcon className="w-4 h-4 text-slate-400" />}
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-sm font-bold text-slate-800 leading-tight">{issue.title}</span>
+                          <span className="text-xs text-slate-400 mt-1 line-clamp-1 max-w-[240px] font-medium">{issue.description}</span>
+                        </div>
                       </div>
-                    ) : (
-                      <div className="flex items-center gap-2 text-amber-500">
-                        <ClockIcon className="w-5 h-5" />
-                        <span className="text-xs font-black uppercase tracking-wider">Pending</span>
+                    </td>
+
+                    <td className="px-6 py-5">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-slate-800 text-white text-[9px] font-black uppercase tracking-tighter">
+                        {issue.status}
+                      </span>
+                    </td>
+
+                    <td className="px-6 py-5">
+                      <span className={`px-2 py-0.5 rounded border text-[9px] font-bold uppercase tracking-tight ${getPriorityColor(issue.priority)}`}>
+                        {issue.priority}
+                      </span>
+                    </td>
+
+                    <td className="px-6 py-5">
+                      <div className="flex flex-wrap gap-1.5">
+                        {issue.assignedTo?.map((emp) => {
+                          const empId = (typeof emp === 'object' ? emp._id : emp)?.toString();
+                          const empName = typeof emp === 'object' ? emp.name : "Staff";
+                          const isMe = empId === currentUserId?.toString();
+
+                          return (
+                            <div key={empId} className={`flex items-center gap-1.5 px-2 py-1 rounded-md border text-[10px] font-bold transition-all
+                              ${isMe ? 'bg-white border-slate-900 text-slate-900 shadow-sm' : 'bg-white border-slate-200 text-slate-500'}`}>
+                              <div className={`w-1.5 h-1.5 rounded-full ${isMe ? 'bg-emerald-500' : 'bg-slate-300'}`} />
+                              {isMe ? "ASSIGNED TO ME" : empName.toUpperCase()}
+                            </div>
+                          );
+                        })}
                       </div>
-                    )}
-                  </td>
-                  <td className="px-8 py-5">
-                    <div className="max-w-md">
-                      <p className="text-sm font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">
-                        {issue.title}
-                      </p>
-                      <p className="text-xs text-slate-400 line-clamp-1 mt-0.5">
-                        {issue.description}
-                      </p>
-                    </div>
-                  </td>
-                  <td className="px-8 py-5">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-[10px] font-black uppercase tracking-widest border ${
-                      issue.priority === 'High' 
-                        ? 'bg-red-50 text-red-600 border-red-100' 
-                        : 'bg-blue-50 text-blue-600 border-blue-100'
-                    }`}>
-                      {issue.priority}
-                    </span>
-                  </td>
-                  <td className="px-8 py-5 text-right">
-                    <span className="text-xs font-bold text-slate-400">
-                      {new Date(issue.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        ) : (
-          <div className="py-24 flex flex-col items-center justify-center text-center">
-            <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-4">
-              <ExclamationCircleIcon className="w-10 h-10 text-slate-200" />
-            </div>
-            <h3 className="text-lg font-bold text-slate-900">Zero Issues Found</h3>
-            <p className="text-slate-400 text-sm max-w-[250px] mt-1">
-              Everything looks good. No issues have been reported for this specific project.
-            </p>
-          </div>
-        )}
+                    </td>
+
+                    <td className="px-6 py-5 text-right">
+                      <button 
+                        onClick={() => toggleExpand(issue._id)} 
+                        className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg border text-xs font-bold transition-all
+                        ${isExpanded ? 'bg-white border-slate-300 text-slate-900 shadow-sm' : 'text-slate-400 border-transparent hover:text-slate-600 hover:bg-white hover:border-slate-200'}`}
+                      >
+                        <ChatBubbleLeftRightIcon className="w-4 h-4" />
+                        {issue.comments?.length || 0}
+                        {isExpanded ? <ChevronUpIcon className="w-3 h-3" /> : <ChevronDownIcon className="w-3 h-3" />}
+                      </button>
+                    </td>
+                  </tr>
+
+                  {isExpanded && (
+                    <tr className="bg-slate-50/30">
+                      <td colSpan="5" className="px-12 py-8 border-y border-slate-100">
+                        <div className="max-w-3xl">
+                          <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-6">Internal Activity Log</h4>
+                          
+                          <div className="space-y-6 relative before:absolute before:left-[19px] before:top-2 before:bottom-2 before:w-px before:bg-slate-200">
+                            {issue.comments?.slice(0, currentVisible).map((comment) => {
+                              const commentUserId = (typeof comment.user === 'object' ? comment.user?._id : comment.user)?.toString();
+                              const isCommentMe = commentUserId === currentUserId?.toString();
+                              
+                              return (
+                                <div key={comment._id} className="flex items-start gap-4 relative">
+                                  <div className={`z-10 p-1.5 rounded-lg border shadow-sm ${isCommentMe ? 'bg-slate-900 border-slate-900 text-white' : 'bg-white border-slate-200 text-slate-400'}`}>
+                                    <UserCircleIcon className="w-4 h-4" />
+                                  </div>
+                                  <div className="flex-1">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <span className="text-[11px] font-black text-slate-800 uppercase tracking-tight">
+                                        {isCommentMe ? "You (Lead)" : "Technical Staff"}
+                                      </span>
+                                      <span className="text-[10px] text-slate-300 font-bold">
+                                        {new Date().toLocaleDateString()}
+                                      </span>
+                                    </div>
+                                    <div className={`p-4 rounded-xl text-sm leading-relaxed border shadow-sm ${isCommentMe ? 'bg-white border-slate-200 text-slate-700' : 'bg-white/50 border-slate-100 text-slate-500 italic'}`}>
+                                      {comment.text}
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+
+                          <div className="mt-8 ml-10">
+                            {issue.comments?.length > currentVisible && (
+                              <button 
+                                onClick={() => setVisibleCount(p => ({...p, [issue._id]: (p[issue._id]||2)+5}))} 
+                                className="text-[10px] font-black text-indigo-600 hover:text-indigo-800 uppercase tracking-widest mb-4"
+                              >
+                                + View Older Updates
+                              </button>
+                            )}
+
+                            <div className="flex gap-3 bg-white p-1.5 rounded-xl border border-slate-200 shadow-sm focus-within:border-slate-400 transition-all">
+                              <input 
+                                type="text" 
+                                value={commentText}
+                                onChange={(e) => setCommentText(e.target.value)}
+                                placeholder="Submit a status update..."
+                                className="flex-1 px-4 py-2 text-sm outline-none bg-transparent font-medium text-slate-700"
+                              />
+                              <button 
+                                disabled={isSubmitting}
+                                onClick={() => handlePostComment(issue._id)} 
+                                className="bg-slate-900 text-white px-4 py-2 rounded-lg hover:bg-black transition-colors disabled:opacity-50"
+                              >
+                                <PaperAirplaneIcon className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
     </div>
   );

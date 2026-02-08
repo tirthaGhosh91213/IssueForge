@@ -1,18 +1,24 @@
 import { motion } from "framer-motion";
 import { Menu, Plus, Shield, LogOut } from "lucide-react";
+import { useNavigate } from "react-router-dom"; // 1. Import the hook
 
-export default function AdminNavbar({ onMenuClick, navigate }) {
+export default function AdminNavbar({ onMenuClick }) {
+  const navigate = useNavigate(); // 2. Initialize navigate here
+
   const actions = [
-    
     { icon: Shield, label: "My Task", path: "/user/my-task" },
-   
   ];
+
+  const handleLogout = () => {
+    localStorage.clear(); // Clears auth, user, and token at once
+    navigate("/login"); // Now this will work
+  };
 
   return (
     <nav className="bg-white/95 backdrop-blur-xl shadow-xl border-b border-slate-200/50 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-5 lg:py-6">
         <div className="flex items-center justify-between">
-          {/* Logo - Mobile First */}
+          {/* Logo - UI UNCHANGED */}
           <motion.div 
             whileHover={{ scale: 1.02 }}
             className="flex items-center gap-3 flex-shrink-0"
@@ -29,7 +35,7 @@ export default function AdminNavbar({ onMenuClick, navigate }) {
             <span className="sm:hidden text-xl font-bold text-slate-900">IssueForge</span>
           </motion.div>
 
-          {/* Mobile Menu Button */}
+          {/* Mobile Menu Button - UI UNCHANGED */}
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
@@ -39,7 +45,7 @@ export default function AdminNavbar({ onMenuClick, navigate }) {
             <Menu size={24} />
           </motion.button>
 
-          {/* Desktop Actions */}
+          {/* Desktop Actions - UI UNCHANGED */}
           <div className="hidden md:flex items-center gap-2 lg:gap-3">
             {actions.map((action, idx) => (
               <ActionButton 
@@ -51,10 +57,7 @@ export default function AdminNavbar({ onMenuClick, navigate }) {
               />
             ))}
             
-            <LogoutButton onClick={() => {
-              localStorage.removeItem("auth");
-              navigate("/login");
-            }} />
+            <LogoutButton onClick={handleLogout} />
           </div>
         </div>
       </div>
@@ -62,6 +65,7 @@ export default function AdminNavbar({ onMenuClick, navigate }) {
   );
 }
 
+// Sub-components remain exactly the same
 function ActionButton({ icon: Icon, label, onClick, delay = 0 }) {
   return (
     <motion.button
