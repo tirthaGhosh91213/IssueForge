@@ -43,8 +43,7 @@ export default function ProjectIssues() {
 
   // 1. Fetch admin ID on load
   useEffect(() => {
-    const storedId =
-      localStorage.getItem("adminId") || "697f7455a657114b9d853f92";
+    const storedId = localStorage.getItem("userId") || "";
     setAdminId(storedId);
   }, []);
 
@@ -260,9 +259,8 @@ export default function ProjectIssues() {
                         </h3>
                       </div>
 
-                      <p className="text-gray-500 text-[15px] mb-5 line-clamp-2">
-                        {issue.description || "No description provided."}
-                      </p>
+                      <p className="text-gray-500 text-[15px] mb-5 line-clamp-2"
+                         dangerouslySetInnerHTML={{ __html: issue.description || "No description provided." }} />
 
                       {/* Team Section */}
                       <div className="space-y-2">

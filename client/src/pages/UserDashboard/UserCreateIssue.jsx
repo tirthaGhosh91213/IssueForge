@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -121,14 +123,15 @@ export default function CreateIssue() {
 
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Description</label>
-                  <textarea 
-                    required
-                    rows="5"
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:border-blue-600 focus:bg-white outline-none transition-all font-medium text-slate-700 resize-none"
-                    placeholder="Details about the finding..."
-                    value={formData.description}
-                    onChange={(e) => setFormData({...formData, description: e.target.value})}
-                  />
+                  <div className="bg-slate-50 border border-slate-200 rounded-lg overflow-hidden focus-within:border-blue-600 focus-within:bg-white transition-all">
+                    <ReactQuill 
+                      theme="snow"
+                      value={formData.description}
+                      onChange={(content) => setFormData({...formData, description: content})}
+                      placeholder="Details about the finding..."
+                      className="h-32 mb-10"
+                    />
+                  </div>
                 </div>
               </div>
 

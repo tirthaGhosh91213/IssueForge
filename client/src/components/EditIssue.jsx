@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from "react";
+import ReactQuill from "react-quill";
+import "react-quill/dist/quill.snow.css";
 import { useNavigate, useParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -68,6 +70,10 @@ export default function EditIssue() {
   // --------------------------
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const handleDescriptionChange = (content) => {
+    setForm({ ...form, description: content });
   };
 
   // --------------------------
@@ -259,18 +265,18 @@ export default function EditIssue() {
           />
         </div>
 
-        {/* DESCRIPTION */}
+        {/* DESCRIPTION - RICH TEXT */}
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-3">Description</label>
-          <textarea
-            name="description"
-            placeholder="Describe the issue in detail..."
-            value={form.description}
-            onChange={handleChange}
-            rows={5}
-            className="w-full p-4 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-indigo-200 focus:border-indigo-500 transition-all resize-vertical shadow-sm hover:shadow-md"
-            required
-          />
+          <div className="bg-white rounded-2xl overflow-hidden border border-gray-200 shadow-sm hover:shadow-md transition-all focus-within:ring-4 focus-within:ring-indigo-200 focus-within:border-indigo-500">
+            <ReactQuill
+              theme="snow"
+              value={form.description}
+              onChange={handleDescriptionChange}
+              placeholder="Describe the issue in detail..."
+              className="h-48 mb-12"
+            />
+          </div>
         </div>
 
         {/* PRIORITY */}

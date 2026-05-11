@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
 import { authFetch } from "../../utils/authFetch";
+import KanbanBoard from "./KanbanBoard";
 
 export default function IssuesSection({ 
   filteredIssues, 
@@ -33,6 +34,7 @@ export default function IssuesSection({
   const [employees, setEmployees] = useState([]);
   const [employeeSearch, setEmployeeSearch] = useState('');
   const [loadingEmployees, setLoadingEmployees] = useState(false);
+  const [viewMode, setViewMode] = useState('list'); // 'list' or 'board'
 
   // ✅ DYNAMIC ADMIN ID
   const [adminId, setAdminId] = useState("");
@@ -140,6 +142,28 @@ export default function IssuesSection({
     }
   };
 
+  // ✅ HANDLE DRAG & DROP STATUS CHANGE
+  const handleStatusChange = async (issueId, newStatus) => {
+    // Map 'working' back to 'progress' for the backend
+    const backendStatus = newStatus === 'working' ? 'progress' : newStatus;
+
+    try {
+      const response = await authFetch(`http://localhost:5000/api/issues/status/${issueId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: backendStatus }),
+      });
+
+      if (response.ok) {
+        await triggerRefresh(); // Refresh UI to show the updated status
+      } else {
+        console.error("Failed to update status");
+      }
+    } catch (error) {
+      console.error("Status update error:", error);
+    }
+  };
+
   const handleEdit = (id) => {
     onEditIssue(id);
   };
@@ -176,15 +200,35 @@ export default function IssuesSection({
                 className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm"
               />
             </div>
+            
+            <div className="flex bg-gray-100 p-1 rounded-xl">
+              <button 
+                onClick={() => setViewMode('list')}
+                className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all ${viewMode === 'list' ? 'bg-white text-indigo-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+              >
+                List View
+              </button>
+              <button 
+                onClick={() => setViewMode('board')}
+                className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all ${viewMode === 'board' ? 'bg-white text-indigo-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+              >
+                Board View
+              </button>
+            </div>
           </div>
 
-          {/* Issues List */}
+          {/* Issues List / Board */}
           <div className="space-y-6">
             {filteredIssues.length === 0 ? (
               <div className="text-center py-20 border-2 border-dashed border-gray-200 rounded-2xl bg-gray-50">
                 <Search className="w-20 h-20 text-gray-300 mx-auto mb-6" />
                 <h3 className="text-xl font-semibold text-gray-900 mb-2">No issues found</h3>
               </div>
+            ) : viewMode === 'board' ? (
+              <KanbanBoard 
+                issues={filteredIssues} 
+                onStatusChange={handleStatusChange} 
+              />
             ) : (
               filteredIssues.map((issue, index) => (
                 <IssueCard
@@ -252,9 +296,8 @@ function IssueCard({ issue, index, onEdit, onDelete, onAssign, onSingleAssign, o
             <h4 className="text-2xl font-bold text-gray-900 leading-tight group-hover:text-indigo-900 transition-colors">
               {issue.title}
             </h4>
-            <p className="text-gray-600 mt-2 leading-relaxed text-lg">
-              {issue.description || 'No description available'}
-            </p>
+            <p className="text-gray-600 mt-2 leading-relaxed text-lg" 
+               dangerouslySetInnerHTML={{ __html: issue.description || 'No description available' }} />
           </div>
 
           {/* ASSIGNED EMPLOYEES */}

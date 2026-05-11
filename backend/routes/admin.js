@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
+const Project = require('../models/Project');
+const Issue = require('../models/Issue');
 
 const sendEmail = require('../utils/sendEmail');
 
@@ -89,6 +91,65 @@ router.delete('/user/:id', async (req, res) => {
     success:true,
     message:'User deleted ✅'
   });
+});
+
+/* =================================================
+   GET ANALYTICS FOR ADMIN DASHBOARD
+   GET /api/admin/analytics
+================================================= */
+router.get('/analytics', async (req, res) => {
+  try {
+    const totalUsers = await User.countDocuments({ role: 'user' });
+    const totalProjects = await Project.countDocuments();
+    const totalIssues = await Issue.countDocuments();
+
+    // Group issues by status
+    const statusAggregation = await Issue.aggregate([
+      { $group: { _id: "$status", count: { $sum: 1 } } }
+    ]);
+    const issuesByStatus = {
+      pending: 0,
+      working: 0,
+      fixed: 0
+    };
+    statusAggregation.forEach(item => {
+      if(item._id) issuesByStatus[item._id] = item.count;
+    });
+
+    // Group issues by priority
+    const priorityAggregation = await Issue.aggregate([
+      { $group: { _id: "$priority", count: { $sum: 1 } } }
+    ]);
+    const issuesByPriority = {
+      low: 0,
+      medium: 0,
+      high: 0
+    };
+    priorityAggregation.forEach(item => {
+      if(item._id) issuesByPriority[item._id] = item.count;
+    });
+
+    // Recent 5 issues
+    const recentIssues = await Issue.find()
+      .sort({ createdAt: -1 })
+      .limit(5)
+      .populate('project', 'name')
+      .populate('assignedTo', 'name email');
+
+    res.json({
+      success: true,
+      metrics: {
+        totalUsers,
+        totalProjects,
+        totalIssues
+      },
+      issuesByStatus,
+      issuesByPriority,
+      recentIssues
+    });
+  } catch (err) {
+    res.json({ success: false, message: err.message });
+  }
 });
 
 module.exports = router;

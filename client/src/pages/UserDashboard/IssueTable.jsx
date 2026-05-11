@@ -88,7 +88,8 @@ const IssueTable = ({ issues: rawData }) => {
                         </div>
                         <div className="flex flex-col">
                           <span className="text-[17px] font-bold text-slate-800 leading-tight">{issue.title}</span>
-                          <span className="text-[13px] text-slate-500 mt-1 line-clamp-1 max-w-[240px] font-medium">{issue.description}</span>
+                          <span className="text-[13px] text-slate-500 mt-1 line-clamp-1 max-w-[240px] font-medium"
+                                dangerouslySetInnerHTML={{ __html: issue.description || 'No description provided' }} />
                         </div>
                       </div>
                     </td>

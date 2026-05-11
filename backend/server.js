@@ -32,10 +32,10 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/user', userRoutes);
 
 /* ── AUTHENTICATED routes AFTER ── */
+app.use('/api/admin', auth, projectRoutes);
 app.use('/api/admin', auth, adminOnly, adminCreateRoutes);
 app.use('/api/admin', auth, adminOnly, adminUserRoutes);
 app.use('/api/admin', auth, adminOnly, adminUsersListRoutes);
-app.use('/api/admin', auth, projectRoutes);
 app.use('/uploads', express.static('uploads'));
 app.use('/api/issues', auth, issueRoutes);
 

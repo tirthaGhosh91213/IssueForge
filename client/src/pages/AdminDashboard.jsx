@@ -12,10 +12,12 @@ import {
 } from "lucide-react";
 import AllUsers from "../components/AllUsers";
 import AllProjects from "../components/AllProjects";
+import DashboardAnalytics from "../components/DashboardAnalytics";
+import { LayoutDashboard } from "lucide-react";
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("users");
+  const [activeTab, setActiveTab] = useState("overview");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -55,6 +57,25 @@ export default function AdminDashboard() {
 
             {/* Navigation - Simple & Formal */}
             <nav className="flex-1 p-4 space-y-2">
+              {/* Overview - TAB */}
+              <motion.button
+                onClick={() => { setActiveTab("overview"); if (window.innerWidth < 1024) setIsSidebarOpen(false); }}
+                className={`w-full flex items-center gap-4 p-4 rounded-xl transition-all duration-200 group ${
+                  activeTab === "overview"
+                    ? "bg-indigo-50 border-2 border-indigo-200 text-indigo-800 shadow-sm font-semibold"
+                    : "text-gray-700 hover:bg-gray-50 hover:text-gray-900 border border-gray-200"
+                }`}
+                whileHover={{ x: 4 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <div className={`w-11 h-11 rounded-lg flex items-center justify-center transition-all ${
+                  activeTab === "overview" ? "bg-indigo-200" : "bg-gray-100 group-hover:bg-indigo-50"
+                }`}>
+                  <LayoutDashboard className={`w-5 h-5 ${activeTab === "overview" ? "text-indigo-700" : "text-gray-500 group-hover:text-indigo-600"}`} />
+                </div>
+                <span className="text-left font-medium">Overview</span>
+              </motion.button>
+
               {/* Users - TAB */}
               <motion.button
                 onClick={handleUsersClick}
@@ -124,15 +145,15 @@ export default function AdminDashboard() {
               </motion.div>
             ) : (
               <motion.div
-                key="users"
+                key={activeTab}
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
                 transition={{ duration: 0.4, type: "spring" }}
                 className="h-full overflow-y-auto p-8"
               >
-                {/* ONLY SHOW AllUsers - Projects goes to separate page */}
-                <AllUsers />
+                {activeTab === "overview" && <DashboardAnalytics />}
+                {activeTab === "users" && <AllUsers />}
               </motion.div>
             )}
           </AnimatePresence>

@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from "react";
+import ReactQuill from "react-quill";
+import "react-quill/dist/quill.snow.css";
 import { useNavigate, useParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -41,6 +43,10 @@ export default function CreateIssue() {
   // --------------------------
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const handleDescriptionChange = (content) => {
+    setForm({ ...form, description: content });
   };
 
   // --------------------------
@@ -159,15 +165,16 @@ export default function CreateIssue() {
           required
         />
 
-        {/* DESCRIPTION */}
-        <textarea
-          name="description"
-          placeholder="Describe the issue"
-          value={form.description}
-          onChange={handleChange}
-          className="w-full p-3 border rounded-xl"
-          required
-        />
+        {/* DESCRIPTION - RICH TEXT */}
+        <div className="bg-white rounded-xl overflow-hidden border border-gray-200">
+          <ReactQuill
+            theme="snow"
+            value={form.description}
+            onChange={handleDescriptionChange}
+            placeholder="Describe the issue in detail..."
+            className="h-48 mb-12"
+          />
+        </div>
 
         {/* PRIORITY */}
         <div>
