@@ -11,6 +11,7 @@ import {
   Trash2,
   Image as ImageIcon
 } from "lucide-react";
+import { authFetch } from "../utils/authFetch";
 
 export default function EditIssue() {
   const navigate = useNavigate();
@@ -35,7 +36,7 @@ export default function EditIssue() {
   useEffect(() => {
     const fetchIssue = async () => {
       try {
-        const response = await fetch(`http://localhost:5000/api/issues/${issueId}`);
+        const response = await authFetch(`http://localhost:5000/api/issues/${issueId}`);
         const data = await response.json();
         
         if (data.success && data.issue) {
@@ -112,7 +113,7 @@ export default function EditIssue() {
     }
 
     try {
-      const response = await fetch(
+      const response = await authFetch(
         `http://localhost:5000/api/issues/update/${issueId}`,
         {
           method: "PUT",
@@ -142,7 +143,7 @@ export default function EditIssue() {
     }
 
     try {
-      await fetch(`http://localhost:5000/api/issues/${issueId}`, {
+      await authFetch(`http://localhost:5000/api/issues/${issueId}`, {
         method: "DELETE"
       });
       navigate(-1);

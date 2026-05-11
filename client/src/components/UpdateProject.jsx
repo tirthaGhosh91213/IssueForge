@@ -11,6 +11,7 @@ import {
   Pencil,
   Trash2
 } from "lucide-react";
+import { authFetch } from "../utils/authFetch";
 
 export default function UpdateProject() {
   const { id } = useParams();
@@ -35,7 +36,7 @@ export default function UpdateProject() {
     const fetchProject = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`http://localhost:5000/api/admin/project/${id}`);
+        const response = await authFetch(`http://localhost:5000/api/admin/project/${id}`);
         const data = await response.json();
         
         if (data.success && data.project) {
@@ -100,7 +101,7 @@ export default function UpdateProject() {
     }
 
     try {
-      const response = await fetch(`http://localhost:5000/api/admin/project/${id}`, {
+      const response = await authFetch(`http://localhost:5000/api/admin/project/${id}`, {
         method: "PUT",
         body: fd,
       });
@@ -126,7 +127,7 @@ export default function UpdateProject() {
     }
 
     try {
-      await fetch(`http://localhost:5000/api/admin/project/${id}`, {
+      await authFetch(`http://localhost:5000/api/admin/project/${id}`, {
         method: "DELETE"
       });
       navigate("/admin/projects");

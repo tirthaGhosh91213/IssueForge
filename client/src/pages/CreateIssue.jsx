@@ -7,6 +7,7 @@ import {
   Flag,
   CheckCircle,ArrowLeft 
 } from "lucide-react";
+import { authFetch } from "../utils/authFetch";
 
 export default function CreateIssue() {
   const navigate = useNavigate();
@@ -30,7 +31,7 @@ export default function CreateIssue() {
   // FETCH EMPLOYEES
   // --------------------------
   useEffect(() => {
-    fetch("http://localhost:5000/api/admin/users")
+    authFetch("http://localhost:5000/api/admin/users")
       .then((r) => r.json())
       .then((d) => setEmployees(d.users || []));
   }, []);
@@ -68,7 +69,7 @@ export default function CreateIssue() {
       if (form[key]) fd.append(key, form[key]);
     });
 
-    const res = await fetch(
+    const res = await authFetch(
       `http://localhost:5000/api/issues/create/${projectId}`,
       {
         method: "POST",

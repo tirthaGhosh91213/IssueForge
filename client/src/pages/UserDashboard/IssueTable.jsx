@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../../services/api';
 import { 
   ChatBubbleLeftRightIcon, 
   UserCircleIcon,
@@ -12,7 +12,7 @@ import {
 
 const IssueTable = ({ issues: rawData }) => {
   const user = JSON.parse(localStorage.getItem('user'));
-  const currentUserId = user?._id || user?.id || "697f7b415338fe4b865cd176";
+  const currentUserId = user?._id || user?.id;
 
   const [issuesList, setIssuesList] = useState([]);
   const [expandedIssue, setExpandedIssue] = useState(null);
@@ -36,7 +36,7 @@ const IssueTable = ({ issues: rawData }) => {
     if (!commentText.trim()) return;
     setIsSubmitting(true);
     try {
-      const res = await axios.post(`http://localhost:5000/api/issues/comment/${issueId}`, {
+      const res = await api.post(`/issues/comment/${issueId}`, {
         text: commentText
       });
       if (res.data.success) {

@@ -1,9 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
 const User = require('../models/User');
 
-const SECRET = "issueforge_secret_key"; // move to .env later
+const SECRET = process.env.JWT_SECRET; 
 
 
 /* =================================================
@@ -22,11 +23,13 @@ router.post('/signup', async (req, res) => {
     if (exists)
       return res.json({ success:false, message:'Admin already exists ❌' });
 
+    const hashedPassword = await bcrypt.hash(password, 10);
+
     await User.create({
       name,
       email,
       empId,
-      password,
+      password: hashedPassword,
       role: 'admin'
     });
 
@@ -61,13 +64,14 @@ router.post('/login', async (req, res) => {
 
     const admin = await User.findOne({
       role: 'admin',
-      email
+      email: { $regex: new RegExp(`^${email}$`, 'i') }
     });
 
     if (!admin)
       return res.json({ success:false, message:'Admin not found ❌' });
 
-    if (admin.password !== password)
+    const isMatch = await bcrypt.compare(password, admin.password);
+    if (!isMatch)
       return res.json({ success:false, message:'Wrong password ❌' });
 
 
@@ -88,7 +92,14 @@ router.post('/login', async (req, res) => {
     res.json({
       success:true,
       message:'Admin login success ✅',
-      token
+      token,
+      userId: admin._id,
+      user: {
+        id: admin._id,
+        name: admin.name,
+        email: admin.email,
+        role: admin.role
+      }
     });
 
   } catch (err) {

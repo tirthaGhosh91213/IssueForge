@@ -28,11 +28,14 @@ router.post('/create-user', async (req, res) => {
     /* =============================
        CREATE USER
     ============================= */
+    const bcrypt = require('bcryptjs');
+    const hashedPassword = await bcrypt.hash(password, 10);
+
     await User.create({
       name,
       email,
       empId,
-      password,
+      password: hashedPassword,
       role: 'user'
     });
 

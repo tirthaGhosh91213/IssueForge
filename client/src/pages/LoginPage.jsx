@@ -23,7 +23,7 @@ export default function LoginPage() {
 
 
   /* ================= SAVE TOKEN (2 DAYS) ================= */
-  const saveToken = (token) => {
+  const saveToken = (token, userId, user) => {
     const twoDays = 2 * 24 * 60 * 60 * 1000;
 
     const tokenData = {
@@ -32,6 +32,9 @@ export default function LoginPage() {
     };
 
     localStorage.setItem("auth", JSON.stringify(tokenData));
+    localStorage.setItem("token", token);
+    if (userId) localStorage.setItem("userId", userId);
+    if (user) localStorage.setItem("user", JSON.stringify(user));
   };
 
 
@@ -53,7 +56,7 @@ export default function LoginPage() {
       let data = await res.json();
 
       if (data.success) {
-        saveToken(data.token);
+        saveToken(data.token, data.userId, data.user);
         navigate("/admin");
         return;
       }
@@ -68,6 +71,7 @@ export default function LoginPage() {
       data = await res.json();
 
       if (data.success) {
+        saveToken(data.token, data.userId, data.user);
         navigate("/user");
         return;
       }

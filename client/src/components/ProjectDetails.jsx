@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
+import { authFetch } from "../utils/authFetch";
 
 // Components
 import ProjectHeader from "../components/ProjectDetails/ProjectHeader";
@@ -11,7 +12,7 @@ import DeleteConfirmModal from "../components/ProjectDetails/DeleteConfirmModal"
 export default function ProjectDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const getAdminId = () => localStorage.getItem('adminId') || '697f7455a657114b9d853f92';
+  const getAdminId = () => localStorage.getItem('userId') || '';
 
   // State
   const [project, setProject] = useState(null);
@@ -32,7 +33,7 @@ export default function ProjectDetails() {
   // ✅ AUTO REFRESH FUNCTIONS
   const refreshProject = useCallback(async () => {
     try {
-      const response = await fetch(`http://localhost:5000/api/admin/project/${id}`);
+      const response = await authFetch(`http://localhost:5000/api/admin/project/${id}`);
       const data = await response.json();
       setProject(data.project);
     } catch (error) {
@@ -43,7 +44,7 @@ export default function ProjectDetails() {
   const refreshIssues = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await fetch(`http://localhost:5000/api/issues/project/${id}`);
+      const response = await authFetch(`http://localhost:5000/api/issues/project/${id}`);
       const data = await response.json();
       if (data.success) {
         setIssues(data.issues || []);
@@ -57,7 +58,7 @@ export default function ProjectDetails() {
 
   const refreshEmployees = useCallback(async () => {
     try {
-      const response = await fetch("http://localhost:5000/api/admin/users");
+      const response = await authFetch("http://localhost:5000/api/admin/users");
       const data = await response.json();
       setEmployees(data.users || []);
     } catch (error) {
@@ -108,7 +109,7 @@ export default function ProjectDetails() {
     setIsAssigning(true);
 
     try {
-      await fetch(`http://localhost:5000/api/issues/assign/${issueId}`, {
+      await authFetch(`http://localhost:5000/api/issues/assign/${issueId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ adminId, userIds })
@@ -142,10 +143,10 @@ export default function ProjectDetails() {
   const handleDeleteConfirmed = async () => {
     try {
       if (deleteConfirm.type === 'project') {
-        await fetch(`http://localhost:5000/api/admin/project/${deleteConfirm.id}`, { method: "DELETE" });
+        await authFetch(`http://localhost:5000/api/admin/project/${deleteConfirm.id}`, { method: "DELETE" });
         navigate(-1);
       } else {
-        await fetch(`http://localhost:5000/api/issues/${deleteConfirm.id}`, { method: "DELETE" });
+        await authFetch(`http://localhost:5000/api/issues/${deleteConfirm.id}`, { method: "DELETE" });
         // ✅ AUTO REFRESH AFTER ISSUE DELETE
         await refreshAllData();
       }

@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Users, Mail, User, Loader2, Search, Trash2, Plus, Eye, X } from "lucide-react";
+import api from "../services/api";
 
 export default function AllUsers() {
   const navigate = useNavigate();
@@ -16,9 +17,8 @@ export default function AllUsers() {
     const fetchUsers = async () => {
       setLoading(true);
       try {
-        const response = await fetch("http://localhost:5000/api/admin/users");
-        const data = await response.json();
-        setUsers(data.users || []);
+        const response = await api.get('/admin/users');
+        setUsers(response.data.users || []);
       } catch (error) {
         console.error("Error fetching users:", error);
       } finally {
@@ -32,11 +32,9 @@ export default function AllUsers() {
   const handleDeleteUser = async (userId) => {
     try {
       setDeleting(true);
-      const response = await fetch(`http://localhost:5000/api/admin/user/${userId}`, {
-        method: 'DELETE',
-      });
+      const response = await api.delete(`/admin/user/${userId}`);
       
-      if (response.ok) {
+      if (response.data.success) {
         setUsers(users.filter(user => user._id !== userId));
         setDeleteConfirm(null);
       }

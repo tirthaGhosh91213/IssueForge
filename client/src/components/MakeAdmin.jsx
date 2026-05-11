@@ -1,6 +1,7 @@
 // MakeAdmin.jsx - Full responsive UI like CreateUser page
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { authFetch } from '../utils/authFetch';
 import { 
   FaUser, FaIdBadge, FaEnvelope, FaLock, FaArrowLeft, FaCheckCircle, 
   FaExclamationTriangle, FaSpinner ,FaCrown
@@ -25,7 +26,7 @@ const MakeAdmin = () => {
     const fetchUser = async () => {
       try {
         setFetchLoading(true);
-        const response = await fetch(`http://localhost:5000/api/admin/users`);
+        const response = await authFetch(`http://localhost:5000/api/admin/users`);
         const data = await response.json();
         if (data.success) {
           const user = data.users?.find(u => u._id === id) || {};
@@ -59,7 +60,7 @@ const MakeAdmin = () => {
     setSuccess(false);
 
     try {
-      const response = await fetch(`http://localhost:5000/api/admin/make-admin/${id}`, {
+      const response = await authFetch(`http://localhost:5000/api/admin/make-admin/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

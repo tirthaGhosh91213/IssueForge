@@ -9,6 +9,7 @@ import {
   CalendarIcon,
   ExclamationCircleIcon
 } from '@heroicons/react/24/outline';
+import api from '../../services/api';
 
 const Dashboard = () => {
   const [projects, setProjects] = useState([]);
@@ -24,8 +25,8 @@ const Dashboard = () => {
   const fetchProjects = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:5000/api/admin/projects');
-      const data = await response.json();
+      const response = await api.get('/admin/projects');
+      const data = response.data;
       
       if (data.success) {
         setProjects(data.projects);

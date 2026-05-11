@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ChevronLeftIcon, // Replaced Arrow with Chevron for a more formal look
@@ -42,7 +42,7 @@ export default function CreateIssue() {
     if (formData.media) data.append('media', formData.media);
 
     try {
-      const res = await axios.post(`http://localhost:5000/api/issues/create/${projectId}`, data, {
+      const res = await api.post(`/issues/create/${projectId}`, data, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom'; 
-import axios from 'axios';
+import api from '../../services/api';
 import { motion } from 'framer-motion';
 import { 
   BriefcaseIcon, 
@@ -20,7 +20,7 @@ export default function MyTasks() {
   const { userId: urlUserId } = useParams(); 
   
   // 2. Fallback: If no ID in URL, get from localStorage (common for logged-in users)
-  const activeUserId = urlUserId || localStorage.getItem('userId') || "697f7b415338fe4b865cd176"; 
+  const activeUserId = urlUserId || localStorage.getItem('userId'); 
 
   useEffect(() => {
     const fetchTasks = async () => {
@@ -33,7 +33,7 @@ export default function MyTasks() {
 
       try {
         setLoading(true);
-        const res = await axios.get(`http://localhost:5000/api/issues/assigned/user/${activeUserId}`);
+        const res = await api.get(`/issues/assigned/user/${activeUserId}`);
         if (res.data.success) {
           setData(res.data);
           setError(null);
@@ -52,7 +52,7 @@ export default function MyTasks() {
   const handleStatusChange = async (issueId, newStatus) => {
     setUpdatingId(issueId);
     try {
-      const res = await axios.put(`http://localhost:5000/api/issues/status/${issueId}`, {
+      const res = await api.put(`/issues/status/${issueId}`, {
         status: newStatus
       });
       

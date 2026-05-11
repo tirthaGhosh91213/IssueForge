@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { authFetch } from '../utils/authFetch';
 import { 
   UsersIcon, 
   EnvelopeIcon,  // ✅ Fixed: was MailIcon
@@ -24,7 +25,7 @@ const UsersList = () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await fetch('http://localhost:5000/api/admin/users');
+      const response = await authFetch('http://localhost:5000/api/admin/users');
       const data = await response.json();
       
       if (data.success) {
@@ -45,7 +46,7 @@ const UsersList = () => {
     
     try {
       setDeletingId(userId);
-      const response = await fetch(`http://localhost:5000/api/admin/user/${userId}`, {
+      const response = await authFetch(`http://localhost:5000/api/admin/user/${userId}`, {
         method: 'DELETE',
       });
       const data = await response.json();

@@ -1,6 +1,7 @@
 // CreateUser.jsx
 import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { authFetch } from '../utils/authFetch';
 
 const CreateUser = () => {
   const navigate = useNavigate();
@@ -40,7 +41,7 @@ const CreateUser = () => {
 
     setIsLoading(true);
     try {
-      const response = await fetch('http://localhost:5000/api/admin/create-user', {
+      const response = await authFetch('http://localhost:5000/api/admin/create-user', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

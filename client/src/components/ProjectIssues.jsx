@@ -17,6 +17,7 @@ import {
   Trash,
   Check,
 } from "lucide-react";
+import api from "../services/api";
 
 export default function ProjectIssues() {
   const navigate = useNavigate();
@@ -53,8 +54,8 @@ export default function ProjectIssues() {
     else setIsRefreshing(true);
 
     try {
-      const res = await fetch("http://localhost:5000/api/issues");
-      const data = await res.json();
+      const res = await api.get("/issues");
+      const data = res.data;
       if (data.success || data.issues) {
         setIssues(data.issues || []);
       }
@@ -68,8 +69,8 @@ export default function ProjectIssues() {
 
   const fetchEmployees = async () => {
     try {
-      const res = await fetch("http://localhost:5000/api/admin/users");
-      const data = await res.json();
+      const res = await api.get("/admin/users");
+      const data = res.data;
       setEmployees(data.users || []);
     } catch (error) {
       console.error("Error fetching employees:", error);
@@ -86,16 +87,12 @@ export default function ProjectIssues() {
   const assignSingleEmployee = async (issueId, employeeId) => {
     setAssigningEmployeeId(employeeId);
     try {
-      const response = await fetch(
-        `http://localhost:5000/api/issues/assign/${issueId}`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ adminId, userIds: [employeeId] }),
-        },
-      );
+      const response = await api.put(`/issues/assign/${issueId}`, {
+        adminId,
+        userIds: [employeeId],
+      });
 
-      if (response.ok) {
+      if (response.status === 200) {
         setAssignModal({ open: false, issueId: null });
         await fetchIssues();
         setShowSuccessModal(true);
@@ -121,16 +118,12 @@ export default function ProjectIssues() {
   // 4. REMOVE INDIVIDUAL EMPLOYEE
   const removeEmployee = async (issueId, employeeId) => {
     try {
-      const response = await fetch(
-        `http://localhost:5000/api/issues/remove-employee/${issueId}`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userId: employeeId, adminId }),
-        },
-      );
+      const response = await api.put(`/issues/remove-employee/${issueId}`, {
+        userId: employeeId,
+        adminId,
+      });
 
-      if (response.ok) {
+      if (response.status === 200) {
         await fetchIssues();
       }
     } catch (error) {
@@ -149,10 +142,8 @@ export default function ProjectIssues() {
 
   const handleDeleteConfirm = async () => {
     try {
-      const res = await fetch(`http://localhost:5000/api/issues/${deleteConfirm.issueId}`, {
-        method: "DELETE",
-      });
-      if (res.ok) {
+      const res = await api.delete(`/issues/${deleteConfirm.issueId}`);
+      if (res.status === 200) {
         await fetchIssues();
       }
     } catch (error) {

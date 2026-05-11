@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Navbar from './NavBar';
 import IssueTable from './IssueTable'; // Importing the child component
+import { authFetch } from '../../utils/authFetch';
 import { 
   ArrowLeftIcon, 
   LinkIcon,
@@ -27,8 +28,8 @@ const UserProjectDetails = () => {
         setLoading(true);
         // Fetching both APIs simultaneously
         const [projRes, issueRes] = await Promise.all([
-          fetch(`http://localhost:5000/api/admin/project/${projectId}`),
-          fetch(`http://localhost:5000/api/issues/project/${projectId}`)
+          authFetch(`http://localhost:5000/api/admin/project/${projectId}`),
+          authFetch(`http://localhost:5000/api/issues/project/${projectId}`)
         ]);
 
         const projData = await projRes.json();

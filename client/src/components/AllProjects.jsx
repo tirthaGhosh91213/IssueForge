@@ -12,7 +12,10 @@ import {
   Trash2,
   AlertCircle,
   Users,
+  CheckCircle2,
+  MousePointerClick,
 } from "lucide-react";
+import api from "../services/api";
 
 export default function AllProjects() {
   const [projects, setProjects] = useState([]);
@@ -30,9 +33,8 @@ export default function AllProjects() {
   const fetchProjects = async () => {
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:5000/api/admin/projects");
-      const data = await res.json();
-      setProjects(data.projects || []);
+      const res = await api.get("/admin/projects");
+      setProjects(res.data.projects || []);
     } catch (error) {
       console.error("Fetch failed:", error);
     } finally {
@@ -47,9 +49,7 @@ export default function AllProjects() {
     if (!window.confirm("Delete this project permanently?")) return;
 
     try {
-      await fetch(`http://localhost:5000/api/admin/project/${id}`, {
-        method: "DELETE",
-      });
+      await api.delete(`/admin/project/${id}`);
       setProjects((prev) => prev.filter((p) => p._id !== id));
     } catch (error) {
       console.error("Delete failed:", error);

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { authFetch } from '../utils/authFetch';
 import { 
   UserIcon, 
   EnvelopeIcon, 
@@ -25,7 +26,7 @@ const UserDetailsPage = () => {
   const fetchUserDetails = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:5000/api/issues/assigned/user/${userId}`);
+      const response = await authFetch(`http://localhost:5000/api/issues/assigned/user/${userId}`);
       const data = await response.json();
       
       if (data.success) {

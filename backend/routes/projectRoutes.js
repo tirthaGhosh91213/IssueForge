@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const multer = require('multer');
 const Project = require('../models/Project');
+const { adminOnly } = require('../middleware/auth');
 
 
 
@@ -23,7 +24,7 @@ const upload = multer({ storage });
   //  CREATE PROJECT
   //  POST /api/admin/create-project
 
-router.post('/create-project', upload.single('image'), async (req, res) => {
+router.post('/create-project', adminOnly, upload.single('image'), async (req, res) => {
 
   try {
     const { name, description, githubUrl } = req.body;
@@ -110,7 +111,7 @@ router.get('/project/:id', async (req, res) => {
   //  UPDATE PROJECT
   //  PUT /api/admin/project/:id
 
-router.put('/project/:id', upload.single('image'), async (req, res) => {
+router.put('/project/:id', adminOnly, upload.single('image'), async (req, res) => {
 
   try {
 
@@ -146,7 +147,7 @@ router.put('/project/:id', upload.single('image'), async (req, res) => {
   //  DELETE PROJECT
   //  DELETE /api/admin/project/:id
 
-router.delete('/project/:id', async (req, res) => {
+router.delete('/project/:id', adminOnly, async (req, res) => {
 
   try {
 

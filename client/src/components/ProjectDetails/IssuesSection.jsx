@@ -14,6 +14,7 @@ import {
   Check
 } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
+import { authFetch } from "../../utils/authFetch";
 
 export default function IssuesSection({ 
   filteredIssues, 
@@ -37,7 +38,7 @@ export default function IssuesSection({
   const [adminId, setAdminId] = useState("");
 
   useEffect(() => {
-    const storedId = localStorage.getItem("adminId") || "697f7455a657114b9d853f92";
+    const storedId = localStorage.getItem("userId") || "";
     setAdminId(storedId);
   }, []);
 
@@ -45,7 +46,7 @@ export default function IssuesSection({
   const fetchEmployees = async (currentIssueId = null) => {
     setLoadingEmployees(true);
     try {
-      const response = await fetch('http://localhost:5000/api/admin/users');
+      const response = await authFetch('http://localhost:5000/api/admin/users');
       const data = await response.json();
       if (data.success) {
         setEmployees(data.users || []);
@@ -79,7 +80,7 @@ export default function IssuesSection({
   const assignSingleEmployee = async (issueId, employeeId) => {
     setAssigningIssues(prev => new Set([...prev, issueId]));
     try {
-      const response = await fetch(`http://localhost:5000/api/issues/assign/${issueId}`, {
+      const response = await authFetch(`http://localhost:5000/api/issues/assign/${issueId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ adminId, userIds: [employeeId] }),
@@ -119,7 +120,7 @@ export default function IssuesSection({
     const key = `${issueId}-${employeeId}`;
     setRemovingEmployees(prev => new Set([...prev, key]));
     try {
-      const response = await fetch(`http://localhost:5000/api/issues/remove-employee/${issueId}`, {
+      const response = await authFetch(`http://localhost:5000/api/issues/remove-employee/${issueId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: employeeId, adminId }),

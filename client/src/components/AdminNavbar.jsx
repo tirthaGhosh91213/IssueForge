@@ -52,7 +52,7 @@ export default function AdminNavbar({ onMenuClick, navigate }) {
             ))}
             
             <LogoutButton onClick={() => {
-              localStorage.removeItem("auth");
+              localStorage.clear();
               navigate("/login");
             }} />
           </div>
